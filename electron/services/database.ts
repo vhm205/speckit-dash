@@ -519,6 +519,195 @@ class DatabaseService {
       },
     };
   }
+
+  // ========================================
+  // Analysis Results Operations
+  // ========================================
+
+  /**
+   * Create a new analysis result record
+   */
+  createAnalysisResult(
+    requestId: string,
+    featureId: number,
+    analysisType: "summary" | "consistency" | "gaps",
+    content: string,
+    duration: number,
+    tokenCount?: number,
+  ): { id: number; requestId: string } {
+    const stmt = this.db!.prepare(`
+      INSERT INTO analysis_results (
+        request_id, feature_id, analysis_type, content, token_count, duration, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      requestId,
+      featureId,
+      analysisType,
+      content,
+      tokenCount ?? null,
+      duration,
+      Date.now(),
+    );
+    return { id: result.lastInsertRowid as number, requestId };
+  }
+
+  /**
+   * Get analysis result by request ID
+   */
+  getAnalysisResultByRequestId(requestId: string): {
+    id: number;
+    request_id: string;
+    feature_id: number;
+    analysis_type: string;
+    content: string;
+    token_count: number | null;
+    duration: number;
+    created_at: number;
+  } | null {
+    const stmt = this.db!.prepare(
+      "SELECT * FROM analysis_results WHERE request_id = ?",
+    );
+    return stmt.get(requestId) as {
+      id: number;
+      request_id: string;
+      feature_id: number;
+      analysis_type: string;
+      content: string;
+      token_count: number | null;
+      duration: number;
+      created_at: number;
+    } | null;
+  }
+
+  /**
+   * Get analysis results by feature with optional type filter
+   */
+  getAnalysisResultsByFeature(
+    featureId: number,
+    analysisType?: "summary" | "consistency" | "gaps",
+    limit: number = 10,
+  ): Array<{
+    id: number;
+    request_id: string;
+    feature_id: number;
+    analysis_type: string;
+    content: string;
+    token_count: number | null;
+    duration: number;
+    created_at: number;
+  }> {
+    if (analysisType) {
+      const stmt = this.db!.prepare(`
+        SELECT * FROM analysis_results 
+        WHERE feature_id = ? AND analysis_type = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `);
+      return stmt.all(featureId, analysisType, limit) as Array<{
+        id: number;
+        request_id: string;
+        feature_id: number;
+        analysis_type: string;
+        content: string;
+        token_count: number | null;
+        duration: number;
+        created_at: number;
+      }>;
+    }
+    const stmt = this.db!.prepare(`
+      SELECT * FROM analysis_results 
+      WHERE feature_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `);
+    return stmt.all(featureId, limit) as Array<{
+      id: number;
+      request_id: string;
+      feature_id: number;
+      analysis_type: string;
+      content: string;
+      token_count: number | null;
+      duration: number;
+      created_at: number;
+    }>;
+  }
+
+  /**
+   * Delete analysis results for a feature
+   */
+  deleteAnalysisResultsByFeature(featureId: number): void {
+    this.db!.prepare("DELETE FROM analysis_results WHERE feature_id = ?").run(
+      featureId,
+    );
+  }
+
+  // ========================================
+  // Enhanced Entity Operations (with source tracking)
+  // ========================================
+
+  /**
+   * Update entity with source file tracking
+   */
+  updateEntitySource(
+    entityId: number,
+    sourceFile: string,
+    lineNumber: number | null,
+  ): void {
+    const stmt = this.db!.prepare(`
+      UPDATE entities 
+      SET source_file = ?, line_number = ?, updated_at = ?
+      WHERE id = ?
+    `);
+    stmt.run(sourceFile, lineNumber, Date.now(), entityId);
+  }
+
+  /**
+   * Get entity by ID with source tracking
+   */
+  getEntityById(entityId: number):
+    | DbEntity & {
+      source_file?: string;
+      line_number?: number | null;
+    }
+    | null {
+    const stmt = this.db!.prepare("SELECT * FROM entities WHERE id = ?");
+    return stmt.get(entityId) as
+      | DbEntity & {
+        source_file?: string;
+        line_number?: number | null;
+      }
+      | null;
+  }
+
+  // ========================================
+  // Migration Support
+  // ========================================
+
+  /**
+   * Run a migration if not already applied
+   */
+  runMigration(migrationFn: (db: Database.Database) => void): void {
+    if (this.db) {
+      migrationFn(this.db);
+    }
+  }
+
+  /**
+   * Check if analysis_results table exists
+   */
+  hasAnalysisResultsTable(): boolean {
+    try {
+      const tables = this.db!.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name='analysis_results'
+      `).all() as Array<{ name: string }>;
+      return tables.length > 0;
+    } catch {
+      return false;
+    }
+  }
 }
 
 // Export singleton instance

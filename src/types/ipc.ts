@@ -195,6 +195,174 @@ export interface ElectronAPI {
 
   // File watcher listener
   onFileChange: (callback: (event: FileChangeEvent) => void) => () => void;
+
+  // AI Provider methods
+  configureAIProvider: (
+    provider: "openai" | "ollama",
+    config: Record<string, unknown>,
+  ) => Promise<IPCResponse<{ activeProvider: string }>>;
+  getAIProviderConfig: () => Promise<
+    IPCResponse<{
+      activeProvider: "openai" | "ollama" | null;
+      openai?: { model: string; baseURL: string; hasApiKey: boolean };
+      ollama?: { baseURL: string; model: string; isRunning: boolean };
+    }>
+  >;
+  switchAIProvider: (
+    provider: "openai" | "ollama",
+  ) => Promise<IPCResponse<{ activeProvider: string }>>;
+  testAIConnection: (
+    provider: "openai" | "ollama",
+  ) => Promise<
+    IPCResponse<{
+      available: boolean;
+      latency: number;
+      models?: string[];
+      error?: string;
+    }>
+  >;
+
+  // AI Analysis methods
+  generateSummary: (
+    featureId: number,
+    filePath: string,
+  ) => Promise<
+    IPCResponse<{
+      requestId: string;
+      summary: string;
+      keyPoints: string[];
+      wordCount: number;
+      duration: number;
+      tokenCount?: number;
+    }>
+  >;
+  checkConsistency: (
+    featureId: number,
+    files: string[],
+  ) => Promise<
+    IPCResponse<{
+      requestId: string;
+      discrepancies: Array<{
+        type: string;
+        file1: string;
+        file2: string;
+        section: string;
+        description: string;
+        severity: string;
+      }>;
+      overallConsistency: number;
+      filesAnalyzed: string[];
+      duration: number;
+      tokenCount?: number;
+    }>
+  >;
+  findGaps: (
+    featureId: number,
+    filePath: string,
+  ) => Promise<
+    IPCResponse<{
+      requestId: string;
+      gaps: Array<{
+        section: string;
+        issue: string;
+        suggestion: string;
+        severity: string;
+      }>;
+      completeness: number;
+      sectionsAnalyzed: string[];
+      duration: number;
+      tokenCount?: number;
+    }>
+  >;
+  getAnalysisHistory: (
+    featureId: number,
+    analysisType?: string,
+    limit?: number,
+  ) => Promise<
+    IPCResponse<{
+      analyses: Array<{
+        id: number;
+        requestId: string;
+        analysisType: string;
+        createdAt: number;
+        duration: number;
+        tokenCount: number | null;
+        preview: string;
+      }>;
+    }>
+  >;
+  getAnalysisResult: (
+    requestId: string,
+  ) => Promise<IPCResponse<unknown>>;
+
+  // Schema methods
+  generateSchema: (
+    featureId: number,
+  ) => Promise<
+    IPCResponse<{
+      nodes: Array<{
+        id: string;
+        type: string;
+        position: { x: number; y: number };
+        data: {
+          entityName: string;
+          description: string;
+          attributeCount: number;
+          relationshipCount: number;
+        };
+      }>;
+      edges: Array<{
+        id: string;
+        source: string;
+        target: string;
+        type: string;
+        label: string;
+      }>;
+      metadata: {
+        entityCount: number;
+        relationshipCount: number;
+        generatedAt: number;
+      };
+    }>
+  >;
+  getEntityDetails: (
+    entityId: number,
+  ) => Promise<
+    IPCResponse<{
+      entity: {
+        id: number;
+        entityName: string;
+        description: string | null;
+        attributes: Array<{ name: string; type: string; description?: string }>;
+        relationships: Array<
+          { target: string; type: string; description?: string }
+        >;
+        sourceFile: string | null;
+        lineNumber: number | null;
+      };
+    }>
+  >;
+
+  // File content methods
+  readSpecFile: (
+    featureId: number,
+    fileType: "spec" | "plan" | "tasks" | "data-model",
+  ) => Promise<
+    IPCResponse<{
+      content: string;
+      sections: Array<{
+        heading: string;
+        level: number;
+        lineStart: number;
+        lineEnd: number;
+      }>;
+      metadata: {
+        title: string;
+        status: string;
+        created: string | null;
+      };
+    }>
+  >;
 }
 
 // Augment the Window interface

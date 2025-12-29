@@ -82,4 +82,67 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.removeListener("file-watcher:change", handler);
     };
   },
+
+  // ========================================
+  // AI Provider Methods
+  // ========================================
+
+  configureAIProvider: (
+    provider: "openai" | "ollama",
+    config: Record<string, unknown>,
+  ) => ipcRenderer.invoke("ai-provider:configure", { provider, config }),
+
+  getAIProviderConfig: () => ipcRenderer.invoke("ai-provider:get-config"),
+
+  switchAIProvider: (provider: "openai" | "ollama") =>
+    ipcRenderer.invoke("ai-provider:switch", { provider }),
+
+  testAIConnection: (provider: "openai" | "ollama") =>
+    ipcRenderer.invoke("ai-provider:test-connection", { provider }),
+
+  // ========================================
+  // AI Analysis Methods
+  // ========================================
+
+  generateSummary: (featureId: number, filePath: string) =>
+    ipcRenderer.invoke("ai-analysis:generate-summary", { featureId, filePath }),
+
+  checkConsistency: (featureId: number, files: string[]) =>
+    ipcRenderer.invoke("ai-analysis:check-consistency", { featureId, files }),
+
+  findGaps: (featureId: number, filePath: string) =>
+    ipcRenderer.invoke("ai-analysis:find-gaps", { featureId, filePath }),
+
+  getAnalysisHistory: (
+    featureId: number,
+    analysisType?: string,
+    limit?: number,
+  ) =>
+    ipcRenderer.invoke("ai-analysis:get-history", {
+      featureId,
+      analysisType,
+      limit,
+    }),
+
+  getAnalysisResult: (requestId: string) =>
+    ipcRenderer.invoke("ai-analysis:get-result", { requestId }),
+
+  // ========================================
+  // Schema Methods
+  // ========================================
+
+  generateSchema: (featureId: number) =>
+    ipcRenderer.invoke("schema:generate", { featureId }),
+
+  getEntityDetails: (entityId: number) =>
+    ipcRenderer.invoke("schema:get-entity-details", { entityId }),
+
+  // ========================================
+  // File Content Methods
+  // ========================================
+
+  readSpecFile: (
+    featureId: number,
+    fileType: "spec" | "plan" | "tasks" | "data-model",
+  ) => ipcRenderer.invoke("files:read-spec", { featureId, fileType }),
 });

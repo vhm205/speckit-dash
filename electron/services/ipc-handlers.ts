@@ -9,6 +9,9 @@ import path from "path";
 import { databaseService } from "./database";
 import { fileWatcherService } from "./file-watcher";
 import { syncProjectFeatures } from "./feature-sync";
+import { aiProviderService } from "./ai-provider";
+import { analysisService } from "./analysis-service";
+import type { OllamaConfig, OpenAIConfig } from "./ai-provider";
 
 /**
  * Validate that a path contains a valid Spec-kit project structure
@@ -411,6 +414,473 @@ export function registerIPCHandlers(): void {
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
           code: "DB_ERROR",
+        };
+      }
+    },
+  );
+
+  // ========================================
+  // AI Provider Handlers
+  // ========================================
+
+  ipcMain.handle(
+    "ai-provider:configure",
+    async (
+      _event,
+      { provider, config }: {
+        provider: "openai" | "ollama";
+        config: OpenAIConfig | OllamaConfig;
+      },
+    ) => {
+      try {
+        if (provider === "openai") {
+          await aiProviderService.configureOpenAI(config as OpenAIConfig);
+        } else {
+          await aiProviderService.configureOllama(config as OllamaConfig);
+        }
+
+        return {
+          success: true,
+          data: { activeProvider: provider },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Configuration failed",
+          code: "CONFIG_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle("ai-provider:get-config", async () => {
+    try {
+      const config = await aiProviderService.getConfig();
+      return {
+        success: true,
+        data: config,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get config",
+        code: "CONFIG_ERROR",
+      };
+    }
+  });
+
+  ipcMain.handle(
+    "ai-provider:switch",
+    async (_event, { provider }: { provider: "openai" | "ollama" }) => {
+      try {
+        await aiProviderService.switchProvider(provider);
+        return {
+          success: true,
+          data: { activeProvider: provider },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Failed to switch provider",
+          code: "PROVIDER_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai-provider:test-connection",
+    async (_event, { provider }: { provider: "openai" | "ollama" }) => {
+      try {
+        const result = await aiProviderService.testConnection(provider);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Connection test failed",
+          code: "CONNECTION_ERROR",
+        };
+      }
+    },
+  );
+
+  // ========================================
+  // AI Analysis Handlers
+  // ========================================
+
+  ipcMain.handle(
+    "ai-analysis:generate-summary",
+    async (
+      _event,
+      { featureId, filePath }: { featureId: number; filePath: string },
+    ) => {
+      try {
+        const result = await analysisService.generateSummary(
+          featureId,
+          filePath,
+        );
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Summary generation failed",
+          code: "AI_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai-analysis:check-consistency",
+    async (
+      _event,
+      { featureId, files }: { featureId: number; files: string[] },
+    ) => {
+      try {
+        const result = await analysisService.checkConsistency(featureId, files);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Consistency check failed",
+          code: "AI_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai-analysis:find-gaps",
+    async (
+      _event,
+      { featureId, filePath }: { featureId: number; filePath: string },
+    ) => {
+      try {
+        const result = await analysisService.findGaps(featureId, filePath);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Gap analysis failed",
+          code: "AI_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai-analysis:get-history",
+    async (
+      _event,
+      { featureId, analysisType, limit }: {
+        featureId: number;
+        analysisType?: string;
+        limit?: number;
+      },
+    ) => {
+      try {
+        const history = analysisService.getAnalysisHistory(
+          featureId,
+          analysisType as "summary" | "consistency" | "gaps" | undefined,
+          limit,
+        );
+        return {
+          success: true,
+          data: { analyses: history },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Failed to get history",
+          code: "DB_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "ai-analysis:get-result",
+    async (_event, { requestId }: { requestId: string }) => {
+      try {
+        const result = analysisService.getAnalysisResult(requestId);
+        if (!result) {
+          return {
+            success: false,
+            error: "Analysis result not found",
+            code: "NOT_FOUND",
+          };
+        }
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Failed to get result",
+          code: "DB_ERROR",
+        };
+      }
+    },
+  );
+
+  // ========================================
+  // Schema Handlers
+  // ========================================
+
+  ipcMain.handle(
+    "schema:generate",
+    async (_event, { featureId }: { featureId: number }) => {
+      try {
+        const entities = databaseService.getEntitiesByFeature(featureId);
+
+        if (entities.length === 0) {
+          return {
+            success: false,
+            error: "No entities found for this feature",
+            code: "NO_ENTITIES",
+          };
+        }
+
+        // Generate nodes for ReactFlow
+        const nodes = entities.map((entity, index) => ({
+          id: `entity-${entity.id}`,
+          type: "entity",
+          position: { x: (index % 4) * 250, y: Math.floor(index / 4) * 150 },
+          data: {
+            entityName: entity.entity_name,
+            description: entity.description || "",
+            attributeCount: entity.attributes
+              ? JSON.parse(entity.attributes).length
+              : 0,
+            relationshipCount: entity.relationships
+              ? JSON.parse(entity.relationships).length
+              : 0,
+          },
+        }));
+
+        // Generate edges from relationships
+        const edges: Array<{
+          id: string;
+          source: string;
+          target: string;
+          type: string;
+          label: string;
+        }> = [];
+
+        for (const entity of entities) {
+          if (entity.relationships) {
+            const relationships = JSON.parse(entity.relationships);
+            for (const rel of relationships) {
+              // Find target entity
+              const target = entities.find(
+                (e) =>
+                  e.entity_name.toLowerCase() === rel.target?.toLowerCase(),
+              );
+              if (target) {
+                edges.push({
+                  id: `edge-${entity.id}-${target.id}`,
+                  source: `entity-${entity.id}`,
+                  target: `entity-${target.id}`,
+                  type: "smoothstep",
+                  label: rel.type || "",
+                });
+              }
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            nodes,
+            edges,
+            metadata: {
+              entityCount: nodes.length,
+              relationshipCount: edges.length,
+              generatedAt: Date.now(),
+            },
+          },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Schema generation failed",
+          code: "SCHEMA_ERROR",
+        };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "schema:get-entity-details",
+    async (_event, { entityId }: { entityId: number }) => {
+      try {
+        const entity = databaseService.getEntityById(entityId);
+        if (!entity) {
+          return {
+            success: false,
+            error: "Entity not found",
+            code: "NOT_FOUND",
+          };
+        }
+
+        return {
+          success: true,
+          data: {
+            entity: {
+              id: entity.id,
+              entityName: entity.entity_name,
+              description: entity.description,
+              attributes: entity.attributes
+                ? JSON.parse(entity.attributes)
+                : [],
+              relationships: entity.relationships
+                ? JSON.parse(entity.relationships)
+                : [],
+              sourceFile: entity.source_file || null,
+              lineNumber: entity.line_number || null,
+            },
+          },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Failed to get entity",
+          code: "DB_ERROR",
+        };
+      }
+    },
+  );
+
+  // ========================================
+  // File Content Handler
+  // ========================================
+
+  ipcMain.handle(
+    "files:read-spec",
+    async (
+      _event,
+      { featureId, fileType }: {
+        featureId: number;
+        fileType: "spec" | "plan" | "tasks" | "data-model";
+      },
+    ) => {
+      try {
+        const feature = databaseService.getFeatureById(featureId);
+        if (!feature) {
+          return {
+            success: false,
+            error: "Feature not found",
+            code: "NOT_FOUND",
+          };
+        }
+
+        // Construct file path based on spec_path
+        const specDir = path.dirname(feature.spec_path);
+        const fileName = `${
+          fileType === "data-model" ? "data-model" : fileType
+        }.md`;
+        const filePath = path.join(specDir, fileName);
+
+        if (!fs.existsSync(filePath)) {
+          return {
+            success: false,
+            error: `File not found: ${fileName}`,
+            code: "FILE_NOT_FOUND",
+          };
+        }
+
+        const content = fs.readFileSync(filePath, "utf-8");
+
+        // Extract sections (basic markdown parsing)
+        const sections: Array<{
+          heading: string;
+          level: number;
+          lineStart: number;
+          lineEnd: number;
+        }> = [];
+
+        const lines = content.split("\n");
+        let currentSection: {
+          heading: string;
+          level: number;
+          lineStart: number;
+        } | null = null;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+
+          if (headingMatch) {
+            if (currentSection) {
+              sections.push({
+                ...currentSection,
+                lineEnd: i,
+              });
+            }
+            currentSection = {
+              heading: headingMatch[2],
+              level: headingMatch[1].length,
+              lineStart: i + 1,
+            };
+          }
+        }
+
+        if (currentSection) {
+          sections.push({
+            ...currentSection,
+            lineEnd: lines.length,
+          });
+        }
+
+        return {
+          success: true,
+          data: {
+            content,
+            sections,
+            metadata: {
+              title: feature.title || feature.feature_name,
+              status: feature.status,
+              created: feature.created_date,
+            },
+          },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to read file",
+          code: "FILE_ERROR",
         };
       }
     },

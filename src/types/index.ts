@@ -179,3 +179,13 @@ export interface FileChangeEvent {
   filePath: string;
   affectedFeatureId?: number;
 }
+
+// ============================================
+// AI SDK Types (re-export from ai.ts)
+// ============================================
+export * from "./ai";
+
+// ============================================
+// Schema Visualization Types (re-export from schema.ts)
+// ============================================
+export * from "./schema";

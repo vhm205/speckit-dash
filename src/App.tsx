@@ -5,11 +5,15 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useProject } from './contexts/ProjectContext';
+import { AIProviderProvider } from './contexts/AIProviderContext';
 import StatsOverview from './views/StatsOverview';
 import FeatureList from './views/FeatureList';
 import KanbanBoard from './views/KanbanBoard';
 import GanttTimeline from './views/GanttTimeline';
 import ArchitectureView from './views/ArchitectureView';
+import AIAnalysis from './views/AIAnalysis';
+import SchemaView from './views/SchemaView';
+import AISettings from './components/AISettings';
 import Navbar from './components/Navbar';
 import ProjectConfigModal from './components/ProjectConfigModal';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -31,41 +35,53 @@ function App() {
   const showConfigModal = projects.length === 0 || !activeProject;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Navigation */}
-      <Navbar />
+    <AIProviderProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Navigation */}
+        <Navbar />
 
-      {/* Main Content */}
-      <main className="pt-16 px-6 pb-8">
-        <div className="max-w-7xl mx-auto">
-          <ErrorBoundary>
-            <Routes>
-              {/* Stats Overview - Default route */}
-              <Route path="/" element={<StatsOverview />} />
+        {/* Main Content */}
+        <main className="pt-16 px-6 pb-8">
+          <div className="max-w-7xl mx-auto">
+            <ErrorBoundary>
+              <Routes>
+                {/* Stats Overview - Default route */}
+                <Route path="/" element={<StatsOverview />} />
 
-              {/* Feature List */}
-              <Route path="/features" element={<FeatureList />} />
+                {/* Feature List */}
+                <Route path="/features" element={<FeatureList />} />
 
-              {/* Kanban Board for a specific feature */}
-              <Route path="/features/:featureId/kanban" element={<KanbanBoard />} />
+                {/* Kanban Board for a specific feature */}
+                <Route path="/features/:featureId/kanban" element={<KanbanBoard />} />
 
-              {/* Gantt Timeline for a specific feature */}
-              <Route path="/features/:featureId/gantt" element={<GanttTimeline />} />
+                {/* Gantt Timeline for a specific feature */}
+                <Route path="/features/:featureId/gantt" element={<GanttTimeline />} />
 
-              {/* Architecture View for a specific feature */}
-              <Route path="/features/:featureId/architecture" element={<ArchitectureView />} />
+                {/* Architecture View for a specific feature */}
+                <Route path="/features/:featureId/architecture" element={<ArchitectureView />} />
 
-              {/* Fallback redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </ErrorBoundary>
-        </div>
-      </main>
+                {/* AI Analysis for a specific feature */}
+                <Route path="/features/:featureId/ai-analysis" element={<AIAnalysis />} />
 
-      {/* Project Configuration Modal */}
-      <ProjectConfigModal isOpen={showConfigModal} onClose={() => { }} isRequired />
-    </div>
+                {/* Schema View for a specific feature */}
+                <Route path="/features/:featureId/schema" element={<SchemaView />} />
+
+                {/* Settings - AI Configuration */}
+                <Route path="/settings/ai" element={<AISettings />} />
+
+                {/* Fallback redirect */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </ErrorBoundary>
+          </div>
+        </main>
+
+        {/* Project Configuration Modal */}
+        <ProjectConfigModal isOpen={showConfigModal} onClose={() => { }} isRequired />
+      </div>
+    </AIProviderProvider>
   );
 }
 
 export default App;
+
