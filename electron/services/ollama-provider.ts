@@ -62,7 +62,7 @@ export class OllamaProvider {
       if (!response.ok) {
         return [];
       }
-      const data = await response.json();
+      const data = (await response.json()) as { models: { name: string }[] };
       return data.models?.map((m: { name: string }) => m.name) || [];
     } catch {
       return [];

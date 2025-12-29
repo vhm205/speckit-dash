@@ -85,8 +85,10 @@ async function parseSpecContent(content) {
     let currentSection = "";
     let currentStory = null;
     const children = tree.children;
+    console.log({ children });
     for (let i = 0; i < children.length; i++) {
         const node = children[i];
+        console.log({ node });
         // Extract title from H1
         if (node.type === "heading" && node.depth === 1) {
             const text = extractText(node);

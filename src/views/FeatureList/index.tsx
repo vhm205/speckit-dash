@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardBody, Progress } from '../../components/ui';
+import { Card, CardBody } from '../../components/ui';
 import { useProject } from '../../contexts/ProjectContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import FeatureCard from '../../components/FeatureCard';

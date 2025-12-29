@@ -456,6 +456,315 @@ class DatabaseService {
   }
 
   // ========================================
+  // Requirement Operations
+  // ========================================
+
+  upsertRequirement(
+    featureId: number,
+    requirementId: string,
+    description: string,
+    type: 'functional' | 'non_functional' | 'constraint',
+    options?: {
+      priority?: string;
+      linkedTasks?: string[];
+      acceptanceCriteria?: string[];
+    },
+  ): { id: number } {
+    const now = Date.now();
+    const existing = this.getRequirementByRequirementId(featureId, requirementId);
+
+    if (existing) {
+      const stmt = this.db!.prepare(`
+        UPDATE requirements SET 
+          description = ?, type = ?, priority = ?, 
+          linked_tasks = ?, acceptance_criteria = ?, updated_at = ?
+        WHERE id = ?
+      `);
+      stmt.run(
+        description,
+        type,
+        options?.priority ?? existing.priority,
+        options?.linkedTasks ? JSON.stringify(options.linkedTasks) : existing.linked_tasks,
+        options?.acceptanceCriteria ? JSON.stringify(options.acceptanceCriteria) : existing.acceptance_criteria,
+        now,
+        existing.id,
+      );
+      return { id: existing.id };
+    }
+
+    const stmt = this.db!.prepare(`
+      INSERT INTO requirements (
+        feature_id, requirement_id, description, type, priority,
+        linked_tasks, acceptance_criteria, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      featureId,
+      requirementId,
+      description,
+      type,
+      options?.priority ?? null,
+      options?.linkedTasks ? JSON.stringify(options.linkedTasks) : null,
+      options?.acceptanceCriteria ? JSON.stringify(options.acceptanceCriteria) : null,
+      now,
+      now,
+    );
+
+    return { id: result.lastInsertRowid as number };
+  }
+
+  getRequirementByRequirementId(featureId: number, requirementId: string): {
+    id: number;
+    feature_id: number;
+    requirement_id: string;
+    type: string;
+    description: string;
+    priority: string | null;
+    linked_tasks: string | null;
+    acceptance_criteria: string | null;
+    created_at: number;
+    updated_at: number;
+  } | null {
+    const stmt = this.db!.prepare(
+      "SELECT * FROM requirements WHERE feature_id = ? AND requirement_id = ?",
+    );
+    return stmt.get(featureId, requirementId) as {
+      id: number;
+      feature_id: number;
+      requirement_id: string;
+      type: string;
+      description: string;
+      priority: string | null;
+      linked_tasks: string | null;
+      acceptance_criteria: string | null;
+      created_at: number;
+      updated_at: number;
+    } | null;
+  }
+
+  getRequirementsByFeature(featureId: number): Array<{
+    id: number;
+    feature_id: number;
+    requirement_id: string;
+    type: string;
+    description: string;
+    priority: string | null;
+    linked_tasks: string | null;
+    acceptance_criteria: string | null;
+    created_at: number;
+    updated_at: number;
+  }> {
+    const stmt = this.db!.prepare(
+      "SELECT * FROM requirements WHERE feature_id = ? ORDER BY requirement_id",
+    );
+    return stmt.all(featureId) as Array<{
+      id: number;
+      feature_id: number;
+      requirement_id: string;
+      type: string;
+      description: string;
+      priority: string | null;
+      linked_tasks: string | null;
+      acceptance_criteria: string | null;
+      created_at: number;
+      updated_at: number;
+    }>;
+  }
+
+  deleteRequirementsByFeature(featureId: number): void {
+    this.db!.prepare("DELETE FROM requirements WHERE feature_id = ?").run(featureId);
+  }
+
+  // ========================================
+  // Research Decision Operations
+  // ========================================
+
+  upsertResearchDecision(
+    featureId: number,
+    title: string,
+    decision: string,
+    options?: {
+      rationale?: string;
+      alternatives?: string[];
+      context?: string;
+    },
+  ): { id: number } {
+    const now = Date.now();
+
+    // Check for existing by title
+    const existing = this.db!.prepare(
+      "SELECT * FROM research_decisions WHERE feature_id = ? AND title = ?",
+    ).get(featureId, title) as { id: number } | undefined;
+
+    if (existing) {
+      const stmt = this.db!.prepare(`
+        UPDATE research_decisions SET 
+          decision = ?, rationale = ?, alternatives = ?, context = ?, updated_at = ?
+        WHERE id = ?
+      `);
+      stmt.run(
+        decision,
+        options?.rationale ?? null,
+        options?.alternatives ? JSON.stringify(options.alternatives) : null,
+        options?.context ?? null,
+        now,
+        existing.id,
+      );
+      return { id: existing.id };
+    }
+
+    const stmt = this.db!.prepare(`
+      INSERT INTO research_decisions (
+        feature_id, title, decision, rationale, alternatives, context,
+        created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      featureId,
+      title,
+      decision,
+      options?.rationale ?? null,
+      options?.alternatives ? JSON.stringify(options.alternatives) : null,
+      options?.context ?? null,
+      now,
+      now,
+    );
+
+    return { id: result.lastInsertRowid as number };
+  }
+
+  getResearchDecisionsByFeature(featureId: number): Array<{
+    id: number;
+    feature_id: number;
+    title: string;
+    decision: string;
+    rationale: string | null;
+    alternatives: string | null;
+    context: string | null;
+    created_at: number;
+    updated_at: number;
+  }> {
+    const stmt = this.db!.prepare(
+      "SELECT * FROM research_decisions WHERE feature_id = ? ORDER BY created_at",
+    );
+    return stmt.all(featureId) as Array<{
+      id: number;
+      feature_id: number;
+      title: string;
+      decision: string;
+      rationale: string | null;
+      alternatives: string | null;
+      context: string | null;
+      created_at: number;
+      updated_at: number;
+    }>;
+  }
+
+  deleteResearchDecisionsByFeature(featureId: number): void {
+    this.db!.prepare("DELETE FROM research_decisions WHERE feature_id = ?").run(featureId);
+  }
+
+  // ========================================
+  // Plan Operations
+  // ========================================
+
+  upsertPlan(
+    featureId: number,
+    options?: {
+      summary?: string;
+      techStack?: Record<string, string>;
+      phases?: Array<{ name: string; goal: string; order: number; tasks: string[] }>;
+      dependencies?: string[];
+      risks?: Array<{ risk: string; mitigation: string }>;
+    },
+  ): { id: number } {
+    const now = Date.now();
+    const existing = this.getPlanByFeature(featureId);
+
+    if (existing) {
+      const stmt = this.db!.prepare(`
+        UPDATE plans SET 
+          summary = ?, tech_stack = ?, phases = ?, dependencies = ?, risks = ?, updated_at = ?
+        WHERE id = ?
+      `);
+      stmt.run(
+        options?.summary ?? existing.summary,
+        options?.techStack ? JSON.stringify(options.techStack) : existing.tech_stack,
+        options?.phases ? JSON.stringify(options.phases) : existing.phases,
+        options?.dependencies ? JSON.stringify(options.dependencies) : existing.dependencies,
+        options?.risks ? JSON.stringify(options.risks) : existing.risks,
+        now,
+        existing.id,
+      );
+      return { id: existing.id };
+    }
+
+    const stmt = this.db!.prepare(`
+      INSERT INTO plans (
+        feature_id, summary, tech_stack, phases, dependencies, risks,
+        created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      featureId,
+      options?.summary ?? null,
+      options?.techStack ? JSON.stringify(options.techStack) : null,
+      options?.phases ? JSON.stringify(options.phases) : null,
+      options?.dependencies ? JSON.stringify(options.dependencies) : null,
+      options?.risks ? JSON.stringify(options.risks) : null,
+      now,
+      now,
+    );
+
+    return { id: result.lastInsertRowid as number };
+  }
+
+  getPlanByFeature(featureId: number): {
+    id: number;
+    feature_id: number;
+    summary: string | null;
+    tech_stack: string | null;
+    phases: string | null;
+    dependencies: string | null;
+    risks: string | null;
+    created_at: number;
+    updated_at: number;
+  } | null {
+    const stmt = this.db!.prepare(
+      "SELECT * FROM plans WHERE feature_id = ?",
+    );
+    return stmt.get(featureId) as {
+      id: number;
+      feature_id: number;
+      summary: string | null;
+      tech_stack: string | null;
+      phases: string | null;
+      dependencies: string | null;
+      risks: string | null;
+      created_at: number;
+      updated_at: number;
+    } | null;
+  }
+
+  deletePlanByFeature(featureId: number): void {
+    this.db!.prepare("DELETE FROM plans WHERE feature_id = ?").run(featureId);
+  }
+
+  // ========================================
+  // Feature Description Operations
+  // ========================================
+
+  updateFeatureDescription(featureId: number, description: string): void {
+    const stmt = this.db!.prepare(
+      "UPDATE features SET description = ?, updated_at = ? WHERE id = ?",
+    );
+    stmt.run(description, Date.now(), featureId);
+  }
+
+  // ========================================
   // Stats Aggregation
   // ========================================
 

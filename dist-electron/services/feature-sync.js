@@ -15,6 +15,8 @@ const database_1 = require("./database");
 const spec_parser_1 = require("./parser/spec-parser");
 const tasks_parser_1 = require("./parser/tasks-parser");
 const data_model_parser_1 = require("./parser/data-model-parser");
+const plan_parser_1 = require("./parser/plan-parser");
+const research_parser_1 = require("./parser/research-parser");
 /**
  * Scan and sync all features from a project
  */
@@ -33,7 +35,7 @@ async function syncProjectFeatures(projectId, projectPath) {
     for (const featureDir of featureDirs) {
         try {
             const featurePath = path_1.default.join(specsDir, featureDir.name);
-            const featureNumber = featureDir.name.split("-")[0];
+            const featureNumber = featureDir.name;
             const featureName = featureDir.name.substring(4);
             // Parse spec.md if exists
             const specPath = path_1.default.join(featurePath, "spec.md");
@@ -42,14 +44,26 @@ async function syncProjectFeatures(projectId, projectPath) {
                 status: "draft",
                 createdDate: null,
             };
+            let requirements = [];
             if (fs_1.default.existsSync(specPath)) {
                 const content = fs_1.default.readFileSync(specPath, "utf-8");
-                const parsed = await (0, spec_parser_1.parseSpecContent)(content);
-                specData = {
-                    title: parsed.title || featureName,
-                    status: parsed.status,
-                    createdDate: parsed.createdDate,
-                };
+                try {
+                    const parsed = await (0, spec_parser_1.parseSpecContent)(content);
+                    specData = {
+                        title: parsed.title || featureName,
+                        status: parsed.status,
+                        createdDate: parsed.createdDate,
+                    };
+                    // Extract requirements
+                    requirements = parsed.requirements.map(req => ({
+                        id: req.id,
+                        description: req.description,
+                        type: req.id.startsWith('NFR') ? 'non_functional' : 'functional',
+                    }));
+                }
+                catch (error) {
+                    console.error("Error parsing spec.md:", error);
+                }
             }
             // Upsert feature
             const feature = database_1.databaseService.upsertFeature(projectId, featureNumber, featureName, specPath, {
@@ -59,6 +73,7 @@ async function syncProjectFeatures(projectId, projectPath) {
             });
             // Parse and sync tasks.md if exists
             const tasksPath = path_1.default.join(featurePath, "tasks.md");
+            console.log({ tasksPath, isExists: fs_1.default.existsSync(tasksPath) });
             if (fs_1.default.existsSync(tasksPath)) {
                 const content = fs_1.default.readFileSync(tasksPath, "utf-8");
                 const parsed = (0, tasks_parser_1.parseTasksContent)(content);
@@ -90,6 +105,43 @@ async function syncProjectFeatures(projectId, projectPath) {
                     });
                 }
             }
+            // Parse and sync requirements from spec.md
+            if (requirements.length > 0) {
+                // Clear existing requirements
+                database_1.databaseService.deleteRequirementsByFeature(feature.id);
+                for (const req of requirements) {
+                    database_1.databaseService.upsertRequirement(feature.id, req.id, req.description, req.type);
+                }
+            }
+            // Parse and sync plan.md if exists
+            const planPath = path_1.default.join(featurePath, "plan.md");
+            console.log({ planPath, isExists: fs_1.default.existsSync(planPath) });
+            if (fs_1.default.existsSync(planPath)) {
+                const content = fs_1.default.readFileSync(planPath, "utf-8");
+                const parsed = await (0, plan_parser_1.parsePlanContent)(content);
+                database_1.databaseService.upsertPlan(feature.id, {
+                    summary: parsed.summary || undefined,
+                    techStack: parsed.techStack,
+                    phases: parsed.phases,
+                    dependencies: parsed.dependencies,
+                    risks: parsed.risks,
+                });
+            }
+            // Parse and sync research.md if exists
+            const researchPath = path_1.default.join(featurePath, "research.md");
+            if (fs_1.default.existsSync(researchPath)) {
+                const content = fs_1.default.readFileSync(researchPath, "utf-8");
+                const parsed = await (0, research_parser_1.parseResearchContent)(content);
+                // Clear existing research decisions
+                database_1.databaseService.deleteResearchDecisionsByFeature(feature.id);
+                for (const decision of parsed.decisions) {
+                    database_1.databaseService.upsertResearchDecision(feature.id, decision.title, decision.decision, {
+                        rationale: decision.rationale || undefined,
+                        alternatives: decision.alternatives,
+                        context: decision.context || undefined,
+                    });
+                }
+            }
             synced++;
         }
         catch (err) {
@@ -108,7 +160,7 @@ async function syncFeatureByPath(projectId, filePath) {
     if (!match)
         return false;
     const featureDir = match[1];
-    const [featureNumber] = featureDir.split("-");
+    const featureNumber = featureDir;
     // Check if feature exists in database
     const feature = database_1.databaseService.getFeatureByNumber(projectId, featureNumber);
     if (!feature) {

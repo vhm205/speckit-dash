@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS features (
   feature_number TEXT NOT NULL,
   feature_name TEXT NOT NULL,
   title TEXT,
+  description TEXT,
   status TEXT NOT NULL CHECK(status IN ('draft', 'approved', 'in_progress', 'complete')) DEFAULT 'draft',
   spec_path TEXT NOT NULL,
   priority TEXT,

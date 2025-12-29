@@ -141,15 +141,18 @@ export function ProjectConfigModal({ isOpen, onClose, isRequired = false }: Proj
                     setSuccess(false);
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder="/Users/you/projects/my-project"
+                  placeholder="e.g., /home/user/projects/my-project"
                   className={`block w-full pl-10 pr-4 py-2.5 text-sm font-mono rounded-lg border ${error
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                     : 'border-gray-300 dark:border-gray-600 focus:border-primary-500 focus:ring-primary-500'
                     } bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-offset-0 transition-colors`}
                 />
               </div>
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                Supports both Windows (C:\Users\username\project) and Unix (/home/user/project) paths
+              </p>
               {error && (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400 whitespace-pre-line">{error}</p>
               )}
             </div>
 

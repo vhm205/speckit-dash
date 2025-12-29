@@ -9,6 +9,8 @@ import { databaseService } from "./database";
 import { parseSpecContent } from "./parser/spec-parser";
 import { parseTasksContent } from "./parser/tasks-parser";
 import { parseDataModelContent } from "./parser/data-model-parser";
+import { parsePlanContent } from "./parser/plan-parser";
+import { parseResearchContent } from "./parser/research-parser";
 
 /**
  * Scan and sync all features from a project
@@ -37,25 +39,39 @@ export async function syncProjectFeatures(
   for (const featureDir of featureDirs) {
     try {
       const featurePath = path.join(specsDir, featureDir.name);
-      const featureNumber = featureDir.name.split("-")[0];
+      const featureNumber = featureDir.name;
       const featureName = featureDir.name.substring(4);
 
       // Parse spec.md if exists
       const specPath = path.join(featurePath, "spec.md");
+
       let specData = {
         title: featureName,
         status: "draft",
         createdDate: null as string | null,
       };
+      let requirements: Array<{ id: string; description: string; type: 'functional' | 'non_functional' | 'constraint' }> = [];
 
       if (fs.existsSync(specPath)) {
         const content = fs.readFileSync(specPath, "utf-8");
-        const parsed = await parseSpecContent(content);
-        specData = {
-          title: parsed.title || featureName,
-          status: parsed.status,
-          createdDate: parsed.createdDate,
-        };
+
+        try {
+          const parsed = await parseSpecContent(content);
+          specData = {
+            title: parsed.title || featureName,
+            status: parsed.status,
+            createdDate: parsed.createdDate,
+          };
+
+          // Extract requirements
+          requirements = parsed.requirements.map(req => ({
+            id: req.id,
+            description: req.description,
+            type: req.id.startsWith('NFR') ? 'non_functional' as const : 'functional' as const,
+          }));
+        } catch (error) {
+          console.error("Error parsing spec.md:", error);
+        }
       }
 
       // Upsert feature
@@ -73,6 +89,7 @@ export async function syncProjectFeatures(
 
       // Parse and sync tasks.md if exists
       const tasksPath = path.join(featurePath, "tasks.md");
+      console.log({ tasksPath, isExists: fs.existsSync(tasksPath) });
       if (fs.existsSync(tasksPath)) {
         const content = fs.readFileSync(tasksPath, "utf-8");
         const parsed = parseTasksContent(content);
@@ -116,6 +133,60 @@ export async function syncProjectFeatures(
         }
       }
 
+      // Parse and sync requirements from spec.md
+      if (requirements.length > 0) {
+        // Clear existing requirements
+        databaseService.deleteRequirementsByFeature(feature.id);
+
+        for (const req of requirements) {
+          databaseService.upsertRequirement(
+            feature.id,
+            req.id,
+            req.description,
+            req.type,
+          );
+        }
+      }
+
+      // Parse and sync plan.md if exists
+      const planPath = path.join(featurePath, "plan.md");
+      console.log({ planPath, isExists: fs.existsSync(planPath) });
+      if (fs.existsSync(planPath)) {
+        const content = fs.readFileSync(planPath, "utf-8");
+        const parsed = await parsePlanContent(content);
+
+        databaseService.upsertPlan(feature.id, {
+          summary: parsed.summary || undefined,
+          techStack: parsed.techStack,
+          phases: parsed.phases,
+          dependencies: parsed.dependencies,
+          risks: parsed.risks,
+        });
+      }
+
+      // Parse and sync research.md if exists
+      const researchPath = path.join(featurePath, "research.md");
+      if (fs.existsSync(researchPath)) {
+        const content = fs.readFileSync(researchPath, "utf-8");
+        const parsed = await parseResearchContent(content);
+
+        // Clear existing research decisions
+        databaseService.deleteResearchDecisionsByFeature(feature.id);
+
+        for (const decision of parsed.decisions) {
+          databaseService.upsertResearchDecision(
+            feature.id,
+            decision.title,
+            decision.decision,
+            {
+              rationale: decision.rationale || undefined,
+              alternatives: decision.alternatives,
+              context: decision.context || undefined,
+            },
+          );
+        }
+      }
+
       synced++;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -138,7 +209,7 @@ export async function syncFeatureByPath(
   if (!match) return false;
 
   const featureDir = match[1];
-  const [featureNumber] = featureDir.split("-");
+  const featureNumber = featureDir;
 
   // Check if feature exists in database
   const feature = databaseService.getFeatureByNumber(projectId, featureNumber);

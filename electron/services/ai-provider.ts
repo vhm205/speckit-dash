@@ -342,7 +342,7 @@ class AIProviderService {
         };
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { data: { id: string }[] };
       const models = data.data?.map((m: { id: string }) => m.id) || [];
 
       return {
@@ -380,7 +380,7 @@ class AIProviderService {
         };
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { models: { name: string }[] };
       const models = data.models?.map((m: { name: string }) => m.name) || [];
 
       return {

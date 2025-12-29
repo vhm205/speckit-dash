@@ -3,6 +3,7 @@
  * Column displaying tasks of a specific status
  */
 
+import { useState } from 'react';
 import TaskCard from '../../components/TaskCard';
 import type { Task } from '../../types';
 
@@ -28,7 +29,11 @@ const colorClasses = {
 };
 
 export function KanbanColumn({ title, tasks, color }: KanbanColumnProps) {
+  const [limit, setLimit] = useState(5);
   const colors = colorClasses[color];
+
+  const visibleTasks = tasks.slice(0, limit);
+  const hasMore = tasks.length > limit;
 
   return (
     <div className="flex flex-col space-y-3">
@@ -46,7 +51,19 @@ export function KanbanColumn({ title, tasks, color }: KanbanColumnProps) {
             No tasks
           </div>
         ) : (
-          tasks.map((task) => <TaskCard key={task.id} task={task} />)
+          <>
+            {visibleTasks.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+            {hasMore && (
+              <button
+                onClick={() => setLimit((prev) => prev + 5)}
+                className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors border border-gray-200 dark:border-gray-700"
+              >
+                Load More
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

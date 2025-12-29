@@ -8,7 +8,8 @@
     "build": "npm run build:electron && tsc && vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "preview": "vite preview",
-    "electron:dev": "npm run build:electron && concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev": "npm run build:electron && concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron . --disable-gpu --no-sandbox --disable-dev-shm-usage\"",
+    "electron:dev:wsl": "bash electron-dev-wsl.sh",
     "electron:build": "npm run build && electron-builder",
     "package": "npm run build && electron-builder --mac --win --linux",
     "package:mac": "npm run build && electron-builder --mac",
@@ -96,6 +97,7 @@
     },
     "files": [
       "dist/**/*",
+      "dist-electron/**/*",
       "electron/**/*"
     ],
     "mac": {

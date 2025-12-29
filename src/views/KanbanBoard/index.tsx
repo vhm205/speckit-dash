@@ -8,7 +8,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardBody } from '../../components/ui';
 import { Button } from '../../components/ui';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import TaskCard from '../../components/TaskCard';
 import KanbanColumn from './KanbanColumn';
 import PhaseHeader from './PhaseHeader';
 import type { Feature, Task } from '../../types';

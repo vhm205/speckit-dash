@@ -5,11 +5,16 @@
  */
 
 import { generateText } from "ai";
-import { v4 as uuidv4 } from "uuid";
 import { aiProviderService } from "./ai-provider";
 import { databaseService } from "./database";
 import fs from "fs";
 import path from "path";
+
+// Dynamic import for uuid (ES module in CommonJS context)
+async function generateUUID(): Promise<string> {
+  const { v4 } = await import("uuid");
+  return v4();
+}
 
 // ============================================================================
 // Types
@@ -211,7 +216,7 @@ class AnalysisService {
     if (cached) return cached;
 
     const startTime = Date.now();
-    const requestId = uuidv4();
+    const requestId = await generateUUID();
 
     // Read file content
     const content = this.readFile(filePath);
@@ -281,14 +286,13 @@ class AnalysisService {
     featureId: number,
     files: string[],
   ): Promise<ConsistencyResult> {
-    const cacheKey = `feature:${featureId}:consistency:${
-      files.sort().join(",")
-    }`;
+    const cacheKey = `feature:${featureId}:consistency:${files.sort().join(",")
+      }`;
     const cached = this.cache.get<ConsistencyResult>(cacheKey);
     if (cached) return cached;
 
     const startTime = Date.now();
-    const requestId = uuidv4();
+    const requestId = await generateUUID();
 
     // Read all files
     const documents = files.map((filePath) => {
@@ -359,7 +363,7 @@ class AnalysisService {
     if (cached) return cached;
 
     const startTime = Date.now();
-    const requestId = uuidv4();
+    const requestId = await generateUUID();
 
     // Read file content
     const content = this.readFile(filePath);

@@ -28,11 +28,11 @@ export interface ErrorResponse {
   success: false;
   error: string;
   code?:
-    | "INVALID_PATH"
-    | "NOT_FOUND"
-    | "DB_ERROR"
-    | "PARSE_ERROR"
-    | "FILE_SYSTEM_ERROR";
+  | "INVALID_PATH"
+  | "NOT_FOUND"
+  | "DB_ERROR"
+  | "PARSE_ERROR"
+  | "FILE_SYSTEM_ERROR";
 }
 
 export type IPCResponse<T = void> = SuccessResponse<T> | ErrorResponse;
@@ -169,6 +169,7 @@ export interface ElectronAPI {
   listProjects: () => Promise<IPCResponse<ProjectListResponse>>;
   selectProject: (projectId: number) => Promise<IPCResponse<void>>;
   removeProject: (projectId: number) => Promise<IPCResponse<void>>;
+  syncProject: (projectId: number) => Promise<IPCResponse<{ synced: number; errors: string[] }>>;
 
   // Feature methods
   listFeatures: (

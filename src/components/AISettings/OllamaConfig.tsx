@@ -3,7 +3,7 @@
  * Form for configuring local Ollama settings
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardBody, Button } from '../ui';
 import { useAIProvider } from '../../contexts/AIProviderContext';
 
@@ -38,12 +38,7 @@ export function OllamaConfig({ isActive, config }: OllamaConfigProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Check Ollama status on mount
-  useEffect(() => {
-    checkOllamaStatus();
-  }, []);
-
-  const checkOllamaStatus = async () => {
+  const checkOllamaStatus = useCallback(async () => {
     setIsChecking(true);
     const result = await testConnection('ollama');
     setIsRunning(result.available);
@@ -51,9 +46,14 @@ export function OllamaConfig({ isActive, config }: OllamaConfigProps) {
       setAvailableModels(result.models);
     }
     setIsChecking(false);
-  };
+  }, [testConnection]);
 
-  const handleSave = async () => {
+  // Check Ollama status on mount
+  useEffect(() => {
+    checkOllamaStatus();
+  }, [checkOllamaStatus]);
+
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -68,7 +68,7 @@ export function OllamaConfig({ isActive, config }: OllamaConfigProps) {
     } else {
       setSaveError('Failed to save configuration');
     }
-  };
+  }, [baseURL, model, configureOllama]);
 
   return (
     <Card>
@@ -85,8 +85,8 @@ export function OllamaConfig({ isActive, config }: OllamaConfigProps) {
             )}
             <span
               className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${isRunning
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                 }`}
             >
               {isChecking ? 'Checking...' : isRunning ? 'Running' : 'Not Running'}

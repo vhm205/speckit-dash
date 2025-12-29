@@ -118,70 +118,70 @@ test gap analysis → verify missing sections highlighted.
 
 #### AI Provider Infrastructure
 
-- [ ] T020 [P] [US2] Create AIProviderService class in
+- [x] T020 [P] [US2] Create AIProviderService class in
       electron/services/ai-provider.ts
-- [ ] T021 [P] [US2] Implement OpenAI provider initialization using
+- [x] T021 [P] [US2] Implement OpenAI provider initialization using
       @ai-sdk/openai
-- [ ] T022 [P] [US2] Create custom OllamaProvider class in
+- [x] T022 [P] [US2] Create custom OllamaProvider class in
       electron/services/ollama-provider.ts
-- [ ] T023 [US2] Implement LanguageModelV1 interface for Ollama (doGenerate,
+- [x] T023 [US2] Implement LanguageModelV1 interface for Ollama (doGenerate,
       doStream methods)
-- [ ] T024 [US2] Add provider configuration storage in AIProviderService using
+- [x] T024 [US2] Add provider configuration storage in AIProviderService using
       electron-store
-- [ ] T025 [US2] Implement API key encryption/decryption using
+- [x] T025 [US2] Implement API key encryption/decryption using
       electron/utils/encryption.ts
-- [ ] T026 [US2] Add provider switching logic with validation
+- [x] T026 [US2] Add provider switching logic with validation
 
 #### IPC Handlers for AI Provider Configuration
 
-- [ ] T027 [P] [US2] Implement ai-provider:configure handler in
+- [x] T027 [P] [US2] Implement ai-provider:configure handler in
       electron/services/ipc-handlers.ts
-- [ ] T028 [P] [US2] Implement ai-provider:get-config handler in
+- [x] T028 [P] [US2] Implement ai-provider:get-config handler in
       electron/services/ipc-handlers.ts
-- [ ] T029 [P] [US2] Implement ai-provider:switch handler in
+- [x] T029 [P] [US2] Implement ai-provider:switch handler in
       electron/services/ipc-handlers.ts
-- [ ] T030 [P] [US2] Implement ai-provider:test-connection handler in
+- [x] T030 [P] [US2] Implement ai-provider:test-connection handler in
       electron/services/ipc-handlers.ts
 
 #### Analysis Service & Prompts
 
-- [ ] T031 [US2] Create AnalysisService class in
+- [x] T031 [US2] Create AnalysisService class in
       electron/services/analysis-service.ts
-- [ ] T032 [US2] Design and implement summary generation prompt template
-- [ ] T033 [US2] Design and implement consistency checking prompt template with
+- [x] T032 [US2] Design and implement summary generation prompt template
+- [x] T033 [US2] Design and implement consistency checking prompt template with
       structured JSON output
-- [ ] T034 [US2] Design and implement gap analysis prompt template with
+- [x] T034 [US2] Design and implement gap analysis prompt template with
       structured JSON output
-- [ ] T035 [US2] Implement generateSummary method with AI SDK integration
-- [ ] T036 [US2] Implement checkConsistency method for multi-document analysis
-- [ ] T037 [US2] Implement findGaps method for specification completeness
+- [x] T035 [US2] Implement generateSummary method with AI SDK integration
+- [x] T036 [US2] Implement checkConsistency method for multi-document analysis
+- [x] T037 [US2] Implement findGaps method for specification completeness
       checking
-- [ ] T038 [US2] Add result caching logic to database via analysis_results table
-- [ ] T039 [US2] Implement in-memory cache for recent analysis results (5-min
+- [x] T038 [US2] Add result caching logic to database via analysis_results table
+- [x] T039 [US2] Implement in-memory cache for recent analysis results (5-min
       TTL)
 
 #### IPC Handlers for AI Analysis
 
-- [ ] T040 [P] [US2] Implement ai-analysis:generate-summary handler in
+- [x] T040 [P] [US2] Implement ai-analysis:generate-summary handler in
       electron/services/ipc-handlers.ts
-- [ ] T041 [P] [US2] Implement ai-analysis:check-consistency handler in
+- [x] T041 [P] [US2] Implement ai-analysis:check-consistency handler in
       electron/services/ipc-handlers.ts
-- [ ] T042 [P] [US2] Implement ai-analysis:find-gaps handler in
+- [x] T042 [P] [US2] Implement ai-analysis:find-gaps handler in
       electron/services/ipc-handlers.ts
-- [ ] T043 [P] [US2] Implement ai-analysis:get-history handler in
+- [x] T043 [P] [US2] Implement ai-analysis:get-history handler in
       electron/services/ipc-handlers.ts
-- [ ] T044 [P] [US2] Implement ai-analysis:get-result handler in
+- [x] T044 [P] [US2] Implement ai-analysis:get-result handler in
       electron/services/ipc-handlers.ts
 
 #### Settings UI
 
-- [ ] T045 [P] [US2] Create AISettings component in
+- [x] T045 [P] [US2] Create AISettings component in
       src/components/AISettings/index.tsx
-- [ ] T046 [P] [US2] Create OpenAIConfig sub-component in
+- [x] T046 [P] [US2] Create OpenAIConfig sub-component in
       src/components/AISettings/OpenAIConfig.tsx
-- [ ] T047 [P] [US2] Create OllamaConfig sub-component in
+- [x] T047 [P] [US2] Create OllamaConfig sub-component in
       src/components/AISettings/OllamaConfig.tsx
-- [ ] T048 [P] [US2] Create ConnectionTest component in
+- [x] T048 [P] [US2] Create ConnectionTest component in
       src/components/AISettings/ConnectionTest.tsx
 - [ ] T049 [US2] Integrate AISettings into app settings/preferences view
 - [ ] T050 [US2] Create AIProviderContext in src/contexts/AIProviderContext.tsx
@@ -189,15 +189,15 @@ test gap analysis → verify missing sections highlighted.
 
 #### Analysis UI Views
 
-- [ ] T051 [P] [US2] Create AIAnalysis main view in
+- [x] T051 [P] [US2] Create AIAnalysis main view in
       src/views/AIAnalysis/index.tsx
-- [ ] T052 [P] [US2] Create SummaryView component in
+- [x] T052 [P] [US2] Create SummaryView component in
       src/views/AIAnalysis/SummaryView.tsx
-- [ ] T053 [P] [US2] Create ConsistencyView component in
+- [x] T053 [P] [US2] Create ConsistencyView component in
       src/views/AIAnalysis/ConsistencyView.tsx
-- [ ] T054 [P] [US2] Create GapAnalysisView component in
+- [x] T054 [P] [US2] Create GapAnalysisView component in
       src/views/AIAnalysis/GapAnalysisView.tsx
-- [ ] T055 [P] [US2] Create AnalysisHistory component in
+- [x] T055 [P] [US2] Create AnalysisHistory component in
       src/views/AIAnalysis/AnalysisHistory.tsx
 - [ ] T056 [US2] Create useAIAnalysis custom hook in src/hooks/useAIAnalysis.ts
 - [ ] T057 [US2] Add routes for /ai-analysis in src/App.tsx
@@ -228,39 +228,39 @@ optimizes for readability.
 
 #### Entity Relationship Parser
 
-- [ ] T061 [P] [US3] Create entity-relationship-parser.ts in
+- [x] T061 [P] [US3] Create entity-relationship-parser.ts in
       electron/services/parser/
-- [ ] T062 [US3] Implement entity extraction from "Key Entities" markdown
+- [x] T062 [US3] Implement entity extraction from "Key Entities" markdown
       sections
-- [ ] T063 [US3] Implement relationship parsing from entity descriptions
-- [ ] T064 [US3] Add source file and line number tracking to parsed entities
-- [ ] T065 [US3] Integrate parser into existing feature sync workflow
+- [x] T063 [US3] Implement relationship parsing from entity descriptions
+- [x] T064 [US3] Add source file and line number tracking to parsed entities
+- [x] T065 [US3] Integrate parser into existing feature sync workflow
 
 #### Schema Generation Service
 
-- [ ] T066 [US3] Create schema generation logic in
+- [x] T066 [US3] Create schema generation logic in
       electron/services/schema-generator.ts
-- [ ] T067 [US3] Implement dagre layout algorithm for entity positioning
-- [ ] T068 [US3] Generate ReactFlow node objects from entities
-- [ ] T069 [US3] Generate ReactFlow edge objects from relationships
-- [ ] T070 [US3] Add in-memory caching for generated schemas (5-min TTL)
+- [x] T067 [US3] Implement dagre layout algorithm for entity positioning
+- [x] T068 [US3] Generate ReactFlow node objects from entities
+- [x] T069 [US3] Generate ReactFlow edge objects from relationships
+- [x] T070 [US3] Add in-memory caching for generated schemas (5-min TTL)
 
 #### IPC Handlers for Schema
 
-- [ ] T071 [P] [US3] Implement schema:generate handler in
+- [x] T071 [P] [US3] Implement schema:generate handler in
       electron/services/ipc-handlers.ts
-- [ ] T072 [P] [US3] Implement schema:get-entity-details handler in
+- [x] T072 [P] [US3] Implement schema:get-entity-details handler in
       electron/services/ipc-handlers.ts
 
 #### Schema Visualization UI
 
-- [ ] T073 [P] [US3] Create SchemaView main view in
+- [x] T073 [P] [US3] Create SchemaView main view in
       src/views/SchemaView/index.tsx
-- [ ] T074 [P] [US3] Create SchemaGraph component in
+- [x] T074 [P] [US3] Create SchemaGraph component in
       src/views/SchemaView/SchemaGraph.tsx
-- [ ] T075 [P] [US3] Create custom EntityNode component in
+- [x] T075 [P] [US3] Create custom EntityNode component in
       src/views/SchemaView/EntityNode.tsx
-- [ ] T076 [P] [US3] Create EntityDetails side panel in
+- [x] T076 [P] [US3] Create EntityDetails side panel in
       src/views/SchemaView/EntityDetails.tsx
 - [ ] T077 [US3] Create useSchema custom hook in src/hooks/useSchema.ts
 - [ ] T078 [US3] Configure ReactFlow with zoom, pan, and controls

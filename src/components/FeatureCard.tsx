@@ -11,13 +11,14 @@ interface FeatureCardProps {
   feature: Feature;
   taskCount?: number;
   completedTasks?: number;
+  onClick?: (feature: Feature) => void;
 }
 
 const statusConfig = {
-  planning: { label: 'Planning', color: 'default' as const },
-  'in-progress': { label: 'In Progress', color: 'warning' as const },
-  done: { label: 'Done', color: 'success' as const },
-  blocked: { label: 'Blocked', color: 'danger' as const },
+  draft: { label: 'Draft', color: 'default' as const },
+  approved: { label: 'Approved', color: 'primary' as const },
+  in_progress: { label: 'In Progress', color: 'warning' as const },
+  complete: { label: 'Complete', color: 'success' as const },
 };
 
 const priorityConfig = {
@@ -26,17 +27,22 @@ const priorityConfig = {
   high: { label: 'High', color: 'danger' as const },
 };
 
-export function FeatureCard({ feature, taskCount = 0, completedTasks = 0 }: FeatureCardProps) {
+export function FeatureCard({
+  feature,
+  taskCount = 0,
+  completedTasks = 0,
+  onClick
+}: FeatureCardProps) {
   const navigate = useNavigate();
-  const status = statusConfig[feature.status as keyof typeof statusConfig] || statusConfig.planning;
-  const priority = priorityConfig[feature.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+  const status = statusConfig[feature.status as keyof typeof statusConfig] || statusConfig.draft;
+  const priority = priorityConfig[(feature.priority?.toLowerCase() as keyof typeof priorityConfig)] || priorityConfig.medium;
 
   const progress = taskCount > 0 ? (completedTasks / taskCount) * 100 : 0;
 
   return (
     <Card
       hover
-      onClick={() => navigate(`/features/${feature.id}`)}
+      onClick={() => onClick ? onClick(feature) : navigate(`/features/${feature.id}`)}
       className="group"
     >
       <CardBody>

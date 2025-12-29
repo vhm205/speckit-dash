@@ -14,6 +14,7 @@ electron_1.contextBridge.exposeInMainWorld("electronAPI", {
     listProjects: () => electron_1.ipcRenderer.invoke("project:list"),
     selectProject: (projectId) => electron_1.ipcRenderer.invoke("project:select", { projectId }),
     removeProject: (projectId) => electron_1.ipcRenderer.invoke("project:remove", { projectId }),
+    syncProject: (projectId) => electron_1.ipcRenderer.invoke("project:sync", { projectId }),
     // ========================================
     // Feature Methods
     // ========================================
@@ -44,4 +45,32 @@ electron_1.contextBridge.exposeInMainWorld("electronAPI", {
             electron_1.ipcRenderer.removeListener("file-watcher:change", handler);
         };
     },
+    // ========================================
+    // AI Provider Methods
+    // ========================================
+    configureAIProvider: (provider, config) => electron_1.ipcRenderer.invoke("ai-provider:configure", { provider, config }),
+    getAIProviderConfig: () => electron_1.ipcRenderer.invoke("ai-provider:get-config"),
+    switchAIProvider: (provider) => electron_1.ipcRenderer.invoke("ai-provider:switch", { provider }),
+    testAIConnection: (provider) => electron_1.ipcRenderer.invoke("ai-provider:test-connection", { provider }),
+    // ========================================
+    // AI Analysis Methods
+    // ========================================
+    generateSummary: (featureId, filePath) => electron_1.ipcRenderer.invoke("ai-analysis:generate-summary", { featureId, filePath }),
+    checkConsistency: (featureId, files) => electron_1.ipcRenderer.invoke("ai-analysis:check-consistency", { featureId, files }),
+    findGaps: (featureId, filePath) => electron_1.ipcRenderer.invoke("ai-analysis:find-gaps", { featureId, filePath }),
+    getAnalysisHistory: (featureId, analysisType, limit) => electron_1.ipcRenderer.invoke("ai-analysis:get-history", {
+        featureId,
+        analysisType,
+        limit,
+    }),
+    getAnalysisResult: (requestId) => electron_1.ipcRenderer.invoke("ai-analysis:get-result", { requestId }),
+    // ========================================
+    // Schema Methods
+    // ========================================
+    generateSchema: (featureId) => electron_1.ipcRenderer.invoke("schema:generate", { featureId }),
+    getEntityDetails: (entityId) => electron_1.ipcRenderer.invoke("schema:get-entity-details", { entityId }),
+    // ========================================
+    // File Content Methods
+    // ========================================
+    readSpecFile: (featureId, fileType) => electron_1.ipcRenderer.invoke("files:read-spec", { featureId, fileType }),
 });

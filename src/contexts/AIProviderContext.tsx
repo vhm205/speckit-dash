@@ -3,7 +3,7 @@
  * Manages AI provider state and configuration across the application
  */
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 
 // ============================================================================
 // Types
@@ -68,12 +68,7 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial config
-  useEffect(() => {
-    refreshConfig();
-  }, []);
-
-  const refreshConfig = async () => {
+  const refreshConfig = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -89,9 +84,14 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const configureOpenAI = async (
+  // Load initial config
+  useEffect(() => {
+    refreshConfig();
+  }, [refreshConfig]);
+
+  const configureOpenAI = useCallback(async (
     apiKey: string,
     model: string,
     baseURL?: string
@@ -114,9 +114,9 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
       setError(err instanceof Error ? err.message : 'Configuration failed');
       return false;
     }
-  };
+  }, [refreshConfig]);
 
-  const configureOllama = async (baseURL: string, model: string): Promise<boolean> => {
+  const configureOllama = useCallback(async (baseURL: string, model: string): Promise<boolean> => {
     try {
       const response = await window.electronAPI.configureAIProvider('ollama', {
         baseURL,
@@ -134,9 +134,9 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
       setError(err instanceof Error ? err.message : 'Configuration failed');
       return false;
     }
-  };
+  }, [refreshConfig]);
 
-  const switchProvider = async (provider: AIProviderType): Promise<boolean> => {
+  const switchProvider = useCallback(async (provider: AIProviderType): Promise<boolean> => {
     try {
       const response = await window.electronAPI.switchAIProvider(provider);
 
@@ -151,9 +151,9 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
       setError(err instanceof Error ? err.message : 'Switch failed');
       return false;
     }
-  };
+  }, [refreshConfig]);
 
-  const testConnection = async (provider: AIProviderType): Promise<TestConnectionResult> => {
+  const testConnection = useCallback(async (provider: AIProviderType): Promise<TestConnectionResult> => {
     try {
       const response = await window.electronAPI.testAIConnection(provider);
 
@@ -173,9 +173,9 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
         error: err instanceof Error ? err.message : 'Connection test failed',
       };
     }
-  };
+  }, []);
 
-  const value: AIProviderContextValue = {
+  const value = useMemo(() => ({
     config,
     isLoading,
     error,
@@ -186,7 +186,16 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
     configureOllama,
     switchProvider,
     testConnection,
-  };
+  }), [
+    config,
+    isLoading,
+    error,
+    refreshConfig,
+    configureOpenAI,
+    configureOllama,
+    switchProvider,
+    testConnection
+  ]);
 
   return (
     <AIProviderContext.Provider value={value}>

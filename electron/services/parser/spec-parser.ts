@@ -81,9 +81,12 @@ export async function parseSpecContent(content: string): Promise<ParsedSpec> {
   let currentStory: ParsedUserStory | null = null;
 
   const children = tree.children as MarkdownNode[];
+  console.log({ children });
 
   for (let i = 0; i < children.length; i++) {
     const node = children[i];
+
+    console.log({ node });
 
     // Extract title from H1
     if (node.type === "heading" && node.depth === 1) {

@@ -36,31 +36,31 @@ Electron desktop application with separated main/renderer processes:
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize npm project with `npm init -y` and configure package.json
+- [x] T001 Initialize npm project with `npm init -y` and configure package.json
       with dependencies
-- [ ] T002 [P] Install Electron dependencies: `electron@^28.0.0`,
+- [x] T002 [P] Install Electron dependencies: `electron@^28.0.0`,
       `electron-builder@^24.9.0`
-- [ ] T003 [P] Install React dependencies: `react@^18.2.0`, `react-dom@^18.2.0`,
+- [x] T003 [P] Install React dependencies: `react@^18.2.0`, `react-dom@^18.2.0`,
       `react-router-dom@^6.20.0`
-- [ ] T004 [P] Install TypeScript and types: `typescript@^5.3.0`,
+- [x] T004 [P] Install TypeScript and types: `typescript@^5.3.0`,
       `@types/react`, `@types/react-dom`, `@types/node`
-- [ ] T005 [P] Install TailwindCSS 4 and PostCSS: `tailwindcss@^4.0.0`,
+- [x] T005 [P] Install TailwindCSS 4 and PostCSS: `tailwindcss@^4.0.0`,
       `autoprefixer@^10.4.0`
-- [ ] T006 [P] Install HeroUI component library: `@heroui/react@latest`,
+- [x] T006 [P] Install HeroUI component library: `@heroui/react@latest`,
       `framer-motion@^10.0.0`
-- [ ] T007 [P] Install Vite build tools: `vite@^5.0.0`,
+- [x] T007 [P] Install Vite build tools: `vite@^5.0.0`,
       `@vitejs/plugin-react@^4.0.0`
-- [ ] T008 [P] Install testing framework: `vitest@^1.0.0`,
+- [x] T008 [P] Install testing framework: `vitest@^1.0.0`,
       `@testing-library/react@^14.0.0`, `@playwright/test@^1.40.0`
-- [ ] T009 Create TypeScript config in `tsconfig.json` with strict mode enabled
-- [ ] T010 Create Vite config in `vite.config.ts` for Electron renderer process
-- [ ] T011 Create TailwindCSS config in `tailwind.config.js` with HeroUI theme
-- [ ] T012 Create electron-builder config in `electron-builder.yml` for
+- [x] T009 Create TypeScript config in `tsconfig.json` with strict mode enabled
+- [x] T010 Create Vite config in `vite.config.ts` for Electron renderer process
+- [x] T011 Create TailwindCSS config in `tailwind.config.js` with HeroUI theme
+- [x] T012 Create electron-builder config in `electron-builder.yml` for
       packaging
-- [ ] T013 Create project directory structure: `electron/`, `src/`, `tests/`
-- [ ] T014 [P] Create ESLint config in `.eslintrc.js` with TypeScript rules
-- [ ] T015 [P] Create Prettier config in `.prettierrc` for code formatting
-- [ ] T016 Configure npm scripts in package.json: `dev`, `build`, `package`,
+- [x] T013 Create project directory structure: `electron/`, `src/`, `tests/`
+- [x] T014 [P] Create ESLint config in `.eslintrc.js` with TypeScript rules
+- [x] T015 [P] Create Prettier config in `.prettierrc` for code formatting
+- [x] T016 Configure npm scripts in package.json: `dev`, `build`, `package`,
       `test`
 
 ---
@@ -72,35 +72,34 @@ be implemented
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T017 Install SQLite dependency: `better-sqlite3@^9.2.0`,
+- [x] T017 Install SQLite dependency: `better-sqlite3@^9.2.0`,
       `@types/better-sqlite3@^7.6.0`
-- [ ] T018 Install file watching dependency: `chokidar@^3.5.0`
-- [ ] T019 Install markdown parsing dependencies: `remark@^15.0.0`,
+- [x] T018 Install file watching dependency: `chokidar@^3.5.0`
+- [x] T019 Install markdown parsing dependencies: `remark@^15.0.0`,
       `remark-parse@^11.0.0`, `remark-gfm@^4.0.0`, `unified@^11.0.0`
-- [ ] T020 Create database schema SQL in `electron/utils/db-schema.sql` with 8
+- [x] T020 Create database schema SQL in `electron/utils/db-schema.sql` with 8
       tables (projects, features, tasks, entities, requirements, plans,
       research_decisions, indexes)
-- [ ] T021 Create Database service in `electron/services/database.ts` with
+- [x] T021 Create Database service in `electron/services/database.ts` with
       SQLite initialization, CRUD operations, and WAL mode
-- [ ] T022 Create TypeScript types in `src/types/index.ts` for all entities
+- [x] T022 Create TypeScript types in `src/types/index.ts` for all entities
       (Project, Feature, Task, Entity, Requirement, Plan, Research Decision)
-- [ ] T023 Create IPC types in `src/types/ipc.ts` for all request/response
+- [x] T023 Create IPC types in `src/types/ipc.ts` for all request/response
       interfaces from contracts/ipc-api.md
-- [ ] T024 Create Electron main process entry point in `electron/main.ts` with
+- [x] T024 Create Electron main process entry point in `electron/main.ts` with
       window creation and IPC setup
-- [ ] T025 Create Electron preload script in `electron/preload.ts` with secure
+- [x] T025 Create Electron preload script in `electron/preload.ts` with secure
       context bridge for IPC
-- [ ] T026 Create React entry point in `src/main.tsx` with root rendering and
+- [x] T026 Create React entry point in `src/main.tsx` with root rendering and
       strict mode
-- [ ] T027 Create React App component in `src/App.tsx` with React Router setup
-
-- [ ] T028 Create base styles in `src/index.css` with TailwindCSS imports and
+- [x] T027 Create React App component in `src/App.tsx` with React Router setup
+- [x] T028 Create base styles in `src/index.css` with TailwindCSS imports and
       custom utilities
-- [ ] T029 Create HeroUI provider wrapper in `src/components/Providers.tsx` with
+- [x] T029 Create HeroUI provider wrapper in `src/components/Providers.tsx` with
       theme configuration
-- [ ] T030 [P] Create ProjectContext in `src/contexts/ProjectContext.tsx` for
+- [x] T030 [P] Create ProjectContext in `src/contexts/ProjectContext.tsx` for
       active project state management
-- [ ] T031 [P] Create ThemeContext in `src/contexts/ThemeContext.tsx` for
+- [x] T031 [P] Create ThemeContext in `src/contexts/ThemeContext.tsx` for
       light/dark mode toggle
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in
@@ -117,29 +116,29 @@ validation and persistence
 
 ### Implementation for User Story 1
 
-- [ ] T032 [P] [US1] Create project validation utility in
+- [x] T032 [P] [US1] Create project validation utility in
       `electron/utils/project-validator.ts` with `.specify/` and `specs/` checks
-- [ ] T033 [P] [US1] Create IPC handler for `project:configure` in
+- [x] T033 [P] [US1] Create IPC handler for `project:configure` in
       `electron/services/ipc-handlers.ts` with path validation
-- [ ] T034 [P] [US1] Create IPC handler for `project:list` in
+- [x] T034 [P] [US1] Create IPC handler for `project:list` in
       `electron/services/ipc-handlers.ts` to query projects table
-- [ ] T035 [P] [US1] Create IPC handler for `project:select` in
+- [x] T035 [P] [US1] Create IPC handler for `project:select` in
       `electron/services/ipc-handlers.ts` to switch active project
-- [ ] T036 [P] [US1] Create IPC handler for `project:remove` in
+- [x] T036 [P] [US1] Create IPC handler for `project:remove` in
       `electron/services/ipc-handlers.ts` to delete project
-- [ ] T037 [US1] Create IPC service wrapper in `src/services/ipc.ts` with
+- [x] T037 [US1] Create IPC service wrapper in `src/services/ipc.ts` with
       type-safe project methods
-- [ ] T038 [US1] Create ProjectConfigModal component in
+- [x] T038 [US1] Create ProjectConfigModal component in
       `src/components/ProjectConfigModal.tsx` using HeroUI Modal with form
       validation
-- [ ] T039 [US1] Create ProjectDropdown component in
+- [x] T039 [US1] Create ProjectDropdown component in
       `src/components/ProjectDropdown.tsx` using HeroUI Dropdown to switch
       projects
-- [ ] T040 [US1] Add project configuration logic to App.tsx to show modal on
+- [x] T040 [US1] Add project configuration logic to App.tsx to show modal on
       first launch
-- [ ] T041 [US1] Implement localStorage persistence for last active project in
+- [x] T041 [US1] Implement localStorage persistence for last active project in
       ProjectContext
-- [ ] T042 [US1] Add error handling and user feedback for invalid paths in
+- [x] T042 [US1] Add error handling and user feedback for invalid paths in
       ProjectConfigModal
 
 **Checkpoint**: User Story 1 complete - users can configure and switch between
@@ -157,24 +156,24 @@ completion, and trend charts
 
 ### Implementation for User Story 2
 
-- [ ] T043 [P] [US2] Install charting library: `recharts@^2.10.0`
-- [ ] T044 [P] [US2] Create IPC handler for `stats:overview` in
+- [x] T043 [P] [US2] Install charting library: `recharts@^2.10.0`
+- [x] T044 [P] [US2] Create IPC handler for `stats:overview` in
       `electron/services/ipc-handlers.ts` with aggregation queries
-- [ ] T045 [US2] Create stats service wrapper in `src/services/ipc.ts` with
+- [x] T045 [US2] Create stats service wrapper in `src/services/ipc.ts` with
       type-safe stats methods
-- [ ] T046 [US2] Create StatsOverview view component in
+- [x] T046 [US2] Create StatsOverview view component in
       `src/views/StatsOverview/index.tsx` as main dashboard landing page
-- [ ] T047 [P] [US2] Create FeatureStatusChart component in
+- [x] T047 [P] [US2] Create FeatureStatusChart component in
       `src/views/StatsOverview/FeatureStatusChart.tsx` using Recharts PieChart
-- [ ] T048 [P] [US2] Create TaskProgressChart component in
+- [x] T048 [P] [US2] Create TaskProgressChart component in
       `src/views/StatsOverview/TaskProgressChart.tsx` using Recharts BarChart
-- [ ] T049 [P] [US2] Create ProjectHealthCard component in
+- [x] T049 [P] [US2] Create ProjectHealthCard component in
       `src/views/StatsOverview/ProjectHealthCard.tsx` with summary metrics
-- [ ] T050 [US2] Add stats overview route to App.tsx with `/` path
-- [ ] T051 [US2] Implement data fetching in StatsOverview using useEffect and
+- [x] T050 [US2] Add stats overview route to App.tsx with `/` path
+- [x] T051 [US2] Implement data fetching in StatsOverview using useEffect and
       IPC calls
-- [ ] T052 [US2] Add loading states and error handling to StatsOverview
-- [ ] T053 [US2] Style charts with TailwindCSS and HeroUI theme colors
+- [x] T052 [US2] Add loading states and error handling to StatsOverview
+- [x] T053 [US2] Style charts with TailwindCSS and HeroUI theme colors
 
 **Checkpoint**: User Story 2 complete - dashboard displays project health
 metrics
@@ -191,33 +190,33 @@ shows tasks in correct columns
 
 ### Implementation for User Story 3
 
-- [ ] T054 [P] [US3] Create IPC handler for `features:list` in
+- [x] T054 [P] [US3] Create IPC handler for `features:list` in
       `electron/services/ipc-handlers.ts` with filtering support
-- [ ] T055 [P] [US3] Create IPC handler for `tasks:list` in
+- [x] T055 [P] [US3] Create IPC handler for `tasks:list` in
       `electron/services/ipc-handlers.ts` with groupBy support
-- [ ] T056 [US3] Create features service wrapper in `src/services/ipc.ts` with
+- [x] T056 [US3] Create features service wrapper in `src/services/ipc.ts` with
       type-safe feature/task methods
-- [ ] T057 [US3] Create FeatureList view component in
+- [x] T057 [US3] Create FeatureList view component in
       `src/views/FeatureList/index.tsx` with virtualized list
-- [ ] T058 [P] [US3] Create FeatureCard component in
+- [x] T058 [P] [US3] Create FeatureCard component in
       `src/components/FeatureCard.tsx` using HeroUI Card with metrics display
-- [ ] T059 [US3] Create KanbanBoard view component in
+- [x] T059 [US3] Create KanbanBoard view component in
       `src/views/KanbanBoard/index.tsx` with column layout
-- [ ] T060 [P] [US3] Create KanbanColumn component in
+- [x] T060 [P] [US3] Create KanbanColumn component in
       `src/views/KanbanBoard/KanbanColumn.tsx` for status columns (Not Started,
       In Progress, Done)
-- [ ] T061 [P] [US3] Create TaskCard component in `src/components/TaskCard.tsx`
+- [x] T061 [P] [US3] Create TaskCard component in `src/components/TaskCard.tsx`
       using HeroUI Card with task details
-- [ ] T062 [P] [US3] Create PhaseHeader component in
+- [x] T062 [P] [US3] Create PhaseHeader component in
       `src/views/KanbanBoard/PhaseHeader.tsx` with phase goal display
-- [ ] T063 [US3] Add feature list route to App.tsx with `/features` path
-- [ ] T064 [US3] Add kanban route to App.tsx with `/features/:featureId/kanban`
+- [x] T063 [US3] Add feature list route to App.tsx with `/features` path
+- [x] T064 [US3] Add kanban route to App.tsx with `/features/:featureId/kanban`
       path
-- [ ] T065 [US3] Implement feature list data fetching in FeatureList using IPC
-- [ ] T066 [US3] Implement click navigation from FeatureCard to KanbanBoard
+- [x] T065 [US3] Implement feature list data fetching in FeatureList using IPC
+- [x] T066 [US3] Implement click navigation from FeatureCard to KanbanBoard
       using React Router
-- [ ] T067 [US3] Implement task grouping by phase and status in KanbanBoard
-- [ ] T068 [US3] Add loading/empty states for FeatureList and KanbanBoard
+- [x] T067 [US3] Implement task grouping by phase and status in KanbanBoard
+- [x] T068 [US3] Add loading/empty states for FeatureList and KanbanBoard
 
 **Checkpoint**: User Story 3 complete - users can browse features and view task
 breakdown
@@ -233,10 +232,10 @@ with task bars and dependency arrows
 
 ### Implementation for User Story 4
 
-- [ ] T069 [P] [US4] Create plan parser in
+- [x] T069 [P] [US4] Create plan parser in
       `electron/services/parser/plan-parser.ts` to extract phases, tasks, and
       dependencies from plan.md
-- [ ] T070 [P] [US4] Create IPC handler for `features:get` in
+- [x] T070 [P] [US4] Create IPC handler for `features:get` in
       `electron/services/ipc-handlers.ts` to return feature with plan data
 - [ ] T071 [US4] Create GanttTimeline view component in
       `src/views/GanttTimeline/index.tsx` with timeline rendering
@@ -269,10 +268,10 @@ render with correct relationships
 
 - [ ] T080 [P] [US5] Install diagram libraries: `reactflow@^11.10.0`,
       `dagre@^0.8.5`, `@types/dagre`
-- [ ] T081 [P] [US5] Create data-model parser in
+- [x] T081 [P] [US5] Create data-model parser in
       `electron/services/parser/data-model-parser.ts` to extract entities and
       relationships from markdown
-- [ ] T082 [P] [US5] Create IPC handler for `entities:list` in
+- [x] T082 [P] [US5] Create IPC handler for `entities:list` in
       `electron/services/ipc-handlers.ts` to query entities table
 - [ ] T083 [US5] Create entity service wrapper in `src/services/ipc.ts` with
       type-safe entity methods
@@ -312,10 +311,10 @@ seconds
 
 - [ ] T094 [US6] Create FileWatcher service in
       `electron/services/file-watcher.ts` using chokidar with debouncing (500ms)
-- [ ] T095 [P] [US6] Create spec parser in
+- [x] T095 [P] [US6] Create spec parser in
       `electron/services/parser/spec-parser.ts` to extract title, status,
       requirements from spec.md
-- [ ] T096 [P] [US6] Create tasks parser in
+- [x] T096 [P] [US6] Create tasks parser in
       `electron/services/parser/tasks-parser.ts` to parse checkbox format and
       extract task status
 - [ ] T097 [US6] Integrate FileWatcher with Database service to update on file
@@ -340,12 +339,12 @@ seconds
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T105 [P] Create Navbar component in `src/components/Navbar.tsx` with
+- [x] T105 [P] Create Navbar component in `src/components/Navbar.tsx` with
       project dropdown and view navigation
-- [ ] T106 [P] Add route navigation links to Navbar for all views
+- [x] T106 [P] Add route navigation links to Navbar for all views
 - [ ] T107 [P] Create ErrorBoundary component in
       `src/components/ErrorBoundary.tsx` with fallback UI
-- [ ] T108 [P] Create LoadingSpinner component in
+- [x] T108 [P] Create LoadingSpinner component in
       `src/components/LoadingSpinner.tsx` using HeroUI Spinner
 - [ ] T109 Implement graceful error handling for malformed markdown files
 - [ ] T110 Add retry logic for database operations with exponential backoff

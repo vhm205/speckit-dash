@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useProject } from '../contexts/ProjectContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ProjectConfigModal from './ProjectConfigModal';
+import SyncButton from './SyncButton';
 
 // Icons (inline SVG for independence)
 const ChartIcon = () => (
@@ -156,6 +157,9 @@ export function Navbar() {
                   </button>
                 </div>
               </div>
+
+              {/* Sync Button */}
+              <SyncButton projectId={activeProject?.id || null} variant="minimal" />
 
               {/* Settings Link */}
               <NavLink

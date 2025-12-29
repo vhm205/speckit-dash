@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   removeProject: (projectId: number) =>
     ipcRenderer.invoke("project:remove", { projectId }),
 
+  syncProject: (projectId: number) =>
+    ipcRenderer.invoke("project:sync", { projectId }),
+
   // ========================================
   // Feature Methods
   // ========================================

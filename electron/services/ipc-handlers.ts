@@ -14,16 +14,62 @@ import { analysisService } from "./analysis-service";
 import type { OllamaConfig, OpenAIConfig } from "./ai-provider";
 
 /**
+ * Normalize path to handle cross-platform paths
+ * Converts Windows paths (C:\Users\...) to Unix-style if needed
+ */
+function normalizePath(inputPath: string): string {
+  // Trim whitespace
+  let normalized = inputPath.trim();
+
+  // Convert backslashes to forward slashes for consistency
+  normalized = normalized.replace(/\\/g, '/');
+
+  // Remove trailing slashes
+  normalized = normalized.replace(/\/+$/, '');
+
+  // On Windows in Node.js, path.normalize will handle drive letters properly
+  // On Unix/WSL, it will keep the path as-is
+  normalized = path.normalize(normalized);
+
+  return normalized;
+}
+
+/**
  * Validate that a path contains a valid Spec-kit project structure
  */
 function validateProjectPath(
   rootPath: string,
 ): { valid: boolean; error?: string } {
-  if (!fs.existsSync(rootPath)) {
-    return { valid: false, error: "Path does not exist" };
+  // Normalize the path for cross-platform compatibility
+  const normalizedPath = normalizePath(rootPath);
+  console.log("Normalized path:", normalizedPath);
+
+  // Check if path exists
+  if (!fs.existsSync(normalizedPath)) {
+    return {
+      valid: false,
+      error: `Path does not exist: ${normalizedPath}\nPlease check the path and try again.`
+    };
   }
 
-  const specifyPath = path.join(rootPath, ".specify");
+  // Check if it's a directory
+  try {
+    const stats = fs.statSync(normalizedPath);
+    if (!stats.isDirectory()) {
+      return {
+        valid: false,
+        error: "Path must be a directory, not a file",
+      };
+    }
+  } catch (err) {
+    return {
+      valid: false,
+      error: `Cannot access path: ${err instanceof Error ? err.message : 'Unknown error'}`,
+    };
+  }
+
+  // Check for .specify folder
+  const specifyPath = path.join(normalizedPath, ".specify");
   if (!fs.existsSync(specifyPath)) {
     return {
       valid: false,
@@ -31,7 +77,8 @@ function validateProjectPath(
     };
   }
 
-  const specsPath = path.join(rootPath, "specs");
+  // Check for specs folder
+  const specsPath = path.join(normalizedPath, "specs");
   if (!fs.existsSync(specsPath)) {
     return {
       valid: false,
@@ -54,7 +101,10 @@ export function registerIPCHandlers(): void {
     "project:configure",
     async (_event, { rootPath }: { rootPath: string }) => {
       try {
-        const validation = validateProjectPath(rootPath);
+        // Normalize path for cross-platform compatibility
+        const normalizedPath = normalizePath(rootPath);
+
+        const validation = validateProjectPath(normalizedPath);
         if (!validation.valid) {
           return {
             success: false,
@@ -64,10 +114,10 @@ export function registerIPCHandlers(): void {
         }
 
         // Get project name from path basename
-        const name = path.basename(rootPath);
+        const name = path.basename(normalizedPath);
 
         // Check if already exists
-        const existing = databaseService.getProjectByPath(rootPath);
+        const existing = databaseService.getProjectByPath(normalizedPath);
         if (existing) {
           databaseService.updateProjectLastOpened(existing.id);
           return {
@@ -85,10 +135,10 @@ export function registerIPCHandlers(): void {
         }
 
         // Create new project
-        const project = databaseService.createProject(name, rootPath);
+        const project = databaseService.createProject(name, normalizedPath);
 
         // Initial feature sync
-        await syncProjectFeatures(project.id, rootPath);
+        await syncProjectFeatures(project.id, normalizedPath);
 
         return {
           success: true,
@@ -181,6 +231,37 @@ export function registerIPCHandlers(): void {
     },
   );
 
+  ipcMain.handle(
+    "project:sync",
+    async (_event, { projectId }: { projectId: number }) => {
+      try {
+        const project = databaseService.getProjectById(projectId);
+        if (!project) {
+          return {
+            success: false,
+            error: "Project not found",
+            code: "NOT_FOUND",
+          };
+        }
+
+        const result = await syncProjectFeatures(projectId, project.root_path);
+        return {
+          success: true,
+          data: {
+            synced: result.synced,
+            errors: result.errors,
+          },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+          code: "SYNC_ERROR",
+        };
+      }
+    },
+  );
+
   // ========================================
   // Feature Handlers
   // ========================================
@@ -243,6 +324,9 @@ export function registerIPCHandlers(): void {
 
         const tasks = databaseService.getTasksByFeature(featureId);
         const entities = databaseService.getEntitiesByFeature(featureId);
+        const requirements = databaseService.getRequirementsByFeature(featureId);
+        const plan = databaseService.getPlanByFeature(featureId);
+        const researchDecisions = databaseService.getResearchDecisionsByFeature(featureId);
 
         return {
           success: true,
@@ -293,9 +377,37 @@ export function registerIPCHandlers(): void {
               createdAt: e.created_at,
               updatedAt: e.updated_at,
             })),
-            requirements: [],
-            plan: null,
-            researchDecisions: [],
+            requirements: requirements.map((r) => ({
+              id: r.id,
+              requirementId: r.requirement_id,
+              type: r.type,
+              description: r.description,
+              priority: r.priority,
+              linkedTasks: r.linked_tasks ? JSON.parse(r.linked_tasks) : [],
+              acceptanceCriteria: r.acceptance_criteria ? JSON.parse(r.acceptance_criteria) : [],
+              createdAt: r.created_at,
+              updatedAt: r.updated_at,
+            })),
+            plan: plan ? {
+              id: plan.id,
+              summary: plan.summary,
+              techStack: plan.tech_stack ? JSON.parse(plan.tech_stack) : {},
+              phases: plan.phases ? JSON.parse(plan.phases) : [],
+              dependencies: plan.dependencies ? JSON.parse(plan.dependencies) : [],
+              risks: plan.risks ? JSON.parse(plan.risks) : [],
+              createdAt: plan.created_at,
+              updatedAt: plan.updated_at,
+            } : null,
+            researchDecisions: researchDecisions.map((rd) => ({
+              id: rd.id,
+              title: rd.title,
+              decision: rd.decision,
+              rationale: rd.rationale,
+              alternatives: rd.alternatives ? JSON.parse(rd.alternatives) : [],
+              context: rd.context,
+              createdAt: rd.created_at,
+              updatedAt: rd.updated_at,
+            })),
           },
         };
       } catch (error) {
@@ -808,9 +920,8 @@ export function registerIPCHandlers(): void {
 
         // Construct file path based on spec_path
         const specDir = path.dirname(feature.spec_path);
-        const fileName = `${
-          fileType === "data-model" ? "data-model" : fileType
-        }.md`;
+        const fileName = `${fileType === "data-model" ? "data-model" : fileType
+          }.md`;
         const filePath = path.join(specDir, fileName);
 
         if (!fs.existsSync(filePath)) {

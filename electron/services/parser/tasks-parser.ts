@@ -3,10 +3,6 @@
  * Parse tasks.md files to extract tasks with status, phases, and dependencies
  */
 
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkGfm from "remark-gfm";
-import remarkFrontmatter from "remark-frontmatter";
 import fs from "fs";
 
 type TaskStatus = "not_started" | "in_progress" | "done";

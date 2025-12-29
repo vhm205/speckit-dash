@@ -23,6 +23,8 @@ export interface Feature {
   featureNumber: string;
   featureName: string;
   title: string | null;
+  description?: string | null;
+  phase?: string | null;
   status: FeatureStatus;
   specPath: string;
   priority: string | null;
