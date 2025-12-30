@@ -16,6 +16,7 @@ const file_watcher_1 = require("./file-watcher");
 const feature_sync_1 = require("./feature-sync");
 const ai_provider_1 = require("./ai-provider");
 const analysis_service_1 = require("./analysis-service");
+const architecture_analyzer_1 = require("./architecture-analyzer");
 /**
  * Normalize path to handle cross-platform paths
  * Converts Windows paths (C:\Users\...) to Unix-style if needed
@@ -38,7 +39,6 @@ function normalizePath(inputPath) {
 function validateProjectPath(rootPath) {
     // Normalize the path for cross-platform compatibility
     const normalizedPath = normalizePath(rootPath);
-    console.log("Normalized path:", normalizedPath);
     // Check if path exists
     if (!fs_1.default.existsSync(normalizedPath)) {
         return {
@@ -665,21 +665,27 @@ function registerIPCHandlers() {
                 };
             }
             // Generate nodes for ReactFlow
-            const nodes = entities.map((entity, index) => ({
-                id: `entity-${entity.id}`,
-                type: "entity",
-                position: { x: (index % 4) * 250, y: Math.floor(index / 4) * 150 },
-                data: {
-                    entityName: entity.entity_name,
-                    description: entity.description || "",
-                    attributeCount: entity.attributes
-                        ? JSON.parse(entity.attributes).length
-                        : 0,
-                    relationshipCount: entity.relationships
-                        ? JSON.parse(entity.relationships).length
-                        : 0,
-                },
-            }));
+            const nodes = entities.map((entity, index) => {
+                const attributes = entity.attributes
+                    ? JSON.parse(entity.attributes)
+                    : [];
+                const relationships = entity.relationships
+                    ? JSON.parse(entity.relationships)
+                    : [];
+                return {
+                    id: `entity-${entity.id}`,
+                    type: "entity",
+                    position: { x: (index % 4) * 280, y: Math.floor(index / 4) * 200 },
+                    data: {
+                        entityName: entity.entity_name,
+                        description: entity.description || "",
+                        attributeCount: attributes.length,
+                        relationshipCount: relationships.length,
+                        attributes: attributes,
+                        relationships: relationships,
+                    },
+                };
+            });
             // Generate edges from relationships
             const edges = [];
             for (const entity of entities) {
@@ -746,6 +752,9 @@ function registerIPCHandlers() {
                         relationships: entity.relationships
                             ? JSON.parse(entity.relationships)
                             : [],
+                        validationRules: entity.validation_rules
+                            ? JSON.parse(entity.validation_rules)
+                            : [],
                         sourceFile: entity.source_file || null,
                         lineNumber: entity.line_number || null,
                     },
@@ -759,6 +768,27 @@ function registerIPCHandlers() {
                     ? error.message
                     : "Failed to get entity",
                 code: "DB_ERROR",
+            };
+        }
+    });
+    // ========================================
+    // Architecture Analysis Handler
+    // ========================================
+    electron_1.ipcMain.handle("architecture:analyze", async (_event, { featureId, force }) => {
+        try {
+            const result = await architecture_analyzer_1.architectureAnalyzer.analyzeArchitecture(featureId, force);
+            return {
+                success: true,
+                data: result,
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error
+                    ? error.message
+                    : "Architecture analysis failed",
+                code: "AI_ERROR",
             };
         }
     });

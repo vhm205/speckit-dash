@@ -149,6 +149,25 @@ export function FeatureSummaryView() {
           >
             View Timeline
           </Button>
+          <Button
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/architecture`)}
+          >
+            View Architecture
+          </Button>
+          <Button
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/schema`)}
+          >
+            View Schema
+          </Button>
+          <Button
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/ai-analysis`)}
+            className="text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800"
+          >
+            AI Analysis
+          </Button>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import { fileWatcherService } from "./file-watcher";
 import { syncProjectFeatures } from "./feature-sync";
 import { aiProviderService } from "./ai-provider";
 import { analysisService } from "./analysis-service";
+import { architectureAnalyzer } from "./architecture-analyzer";
 import type { OllamaConfig, OpenAIConfig } from "./ai-provider";
 
 /**
@@ -42,7 +43,6 @@ function validateProjectPath(
 ): { valid: boolean; error?: string } {
   // Normalize the path for cross-platform compatibility
   const normalizedPath = normalizePath(rootPath);
-  console.log("Normalized path:", normalizedPath);
 
   // Check if path exists
   if (!fs.existsSync(normalizedPath)) {
@@ -65,9 +65,8 @@ function validateProjectPath(
   } catch (err) {
     return {
       valid: false,
-      error: `Cannot access path: ${
-        err instanceof Error ? err.message : "Unknown error"
-      }`,
+      error: `Cannot access path: ${err instanceof Error ? err.message : "Unknown error"
+        }`,
     };
   }
 
@@ -799,21 +798,28 @@ export function registerIPCHandlers(): void {
         }
 
         // Generate nodes for ReactFlow
-        const nodes = entities.map((entity, index) => ({
-          id: `entity-${entity.id}`,
-          type: "entity",
-          position: { x: (index % 4) * 250, y: Math.floor(index / 4) * 150 },
-          data: {
-            entityName: entity.entity_name,
-            description: entity.description || "",
-            attributeCount: entity.attributes
-              ? JSON.parse(entity.attributes).length
-              : 0,
-            relationshipCount: entity.relationships
-              ? JSON.parse(entity.relationships).length
-              : 0,
-          },
-        }));
+        const nodes = entities.map((entity, index) => {
+          const attributes = entity.attributes
+            ? JSON.parse(entity.attributes)
+            : [];
+          const relationships = entity.relationships
+            ? JSON.parse(entity.relationships)
+            : [];
+
+          return {
+            id: `entity-${entity.id}`,
+            type: "entity",
+            position: { x: (index % 4) * 280, y: Math.floor(index / 4) * 200 },
+            data: {
+              entityName: entity.entity_name,
+              description: entity.description || "",
+              attributeCount: attributes.length,
+              relationshipCount: relationships.length,
+              attributes: attributes,
+              relationships: relationships,
+            },
+          };
+        });
 
         // Generate edges from relationships
         const edges: Array<{
@@ -896,6 +902,9 @@ export function registerIPCHandlers(): void {
               relationships: entity.relationships
                 ? JSON.parse(entity.relationships)
                 : [],
+              validationRules: entity.validation_rules
+                ? JSON.parse(entity.validation_rules)
+                : [],
               sourceFile: entity.source_file || null,
               lineNumber: entity.line_number || null,
             },
@@ -908,6 +917,37 @@ export function registerIPCHandlers(): void {
             ? error.message
             : "Failed to get entity",
           code: "DB_ERROR",
+        };
+      }
+    },
+  );
+
+  // ========================================
+  // Architecture Analysis Handler
+  // ========================================
+
+  ipcMain.handle(
+    "architecture:analyze",
+    async (
+      _event,
+      { featureId, force }: { featureId: number; force?: boolean },
+    ) => {
+      try {
+        const result = await architectureAnalyzer.analyzeArchitecture(
+          featureId,
+          force,
+        );
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error
+            ? error.message
+            : "Architecture analysis failed",
+          code: "AI_ERROR",
         };
       }
     },
@@ -938,13 +978,12 @@ export function registerIPCHandlers(): void {
 
         // Construct file path based on spec_path
         const specDir = path.dirname(feature.spec_path);
-        const fileName = `${
-          fileType === "data-model"
-            ? "data-model"
-            : fileType === "requirements"
+        const fileName = `${fileType === "data-model"
+          ? "data-model"
+          : fileType === "requirements"
             ? "requirements"
             : fileType
-        }.md`;
+          }.md`;
         const filePath = fileType === "requirements"
           ? path.join(specDir, "checklists", "requirements.md")
           : path.join(specDir, fileName);

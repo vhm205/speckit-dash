@@ -28,11 +28,11 @@ export interface ErrorResponse {
   success: false;
   error: string;
   code?:
-    | "INVALID_PATH"
-    | "NOT_FOUND"
-    | "DB_ERROR"
-    | "PARSE_ERROR"
-    | "FILE_SYSTEM_ERROR";
+  | "INVALID_PATH"
+  | "NOT_FOUND"
+  | "DB_ERROR"
+  | "PARSE_ERROR"
+  | "FILE_SYSTEM_ERROR";
 }
 
 export type IPCResponse<T = void> = SuccessResponse<T> | ErrorResponse;
@@ -346,6 +346,12 @@ export interface ElectronAPI {
       };
     }>
   >;
+
+  // Architecture analysis methods
+  analyzeArchitecture: (
+    featureId: number,
+    force?: boolean,
+  ) => Promise<IPCResponse<unknown>>;
 
   // File content methods
   readSpecFile: (

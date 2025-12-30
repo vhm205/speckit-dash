@@ -88,6 +88,11 @@ export function EntityDetails({ entity, onClose }: EntityDetailsProps) {
                       </span>
                     )}
                   </div>
+                  {attr.constraints && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">
+                      {attr.constraints}
+                    </p>
+                  )}
                   {attr.description && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {attr.description}
@@ -138,6 +143,27 @@ export function EntityDetails({ entity, onClose }: EntityDetailsProps) {
             </div>
           )}
         </div>
+
+        {/* Validation Rules */}
+        {entity.validationRules && entity.validationRules.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Validation Rules ({entity.validationRules.length})
+            </h3>
+            <div className="space-y-1">
+              {entity.validationRules.map((rule, index) => (
+                <div
+                  key={index}
+                  className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded border-l-2 border-amber-400 dark:border-amber-600"
+                >
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    {rule}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

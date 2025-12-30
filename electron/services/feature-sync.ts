@@ -132,10 +132,12 @@ export async function syncProjectFeatures(
         const parsed = await parseDataModelContent(content);
 
         for (const entity of parsed.entities) {
+          console.log({ entity });
           databaseService.upsertEntity(feature.id, entity.name, {
             description: entity.description || undefined,
             attributes: entity.attributes,
             relationships: entity.relationships,
+            validationRules: entity.validationRules,
           });
         }
       }
@@ -157,7 +159,6 @@ export async function syncProjectFeatures(
 
       // Parse and sync plan.md if exists
       const planPath = path.join(featurePath, "plan.md");
-      console.log({ planPath, isExists: fs.existsSync(planPath) });
       if (fs.existsSync(planPath)) {
         const content = fs.readFileSync(planPath, "utf-8");
         const parsed = await parsePlanContent(content);

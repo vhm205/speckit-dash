@@ -191,3 +191,8 @@ export * from "./ai";
 // Schema Visualization Types (re-export from schema.ts)
 // ============================================
 export * from "./schema";
+
+// ============================================
+// Architecture Visualization Types (re-export from architecture.ts)
+// ============================================
+export * from "./architecture";

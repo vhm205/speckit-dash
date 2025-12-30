@@ -115,6 +115,36 @@ class DatabaseService {
 
     // Ensure analysis_results table exists (as a migration/safeguard)
     this.ensureAnalysisResultsTable();
+
+    // Ensure architecture_analysis table exists
+    this.ensureArchitectureAnalysisTable();
+  }
+
+  /**
+   * Ensure the architecture_analysis table exists
+   */
+  private ensureArchitectureAnalysisTable(): void {
+    if (!this.db) return;
+
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS architecture_analysis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        feature_id INTEGER NOT NULL UNIQUE,
+        request_id TEXT NOT NULL,
+        actors TEXT NOT NULL,
+        systems TEXT NOT NULL,
+        processes TEXT NOT NULL,
+        data_stores TEXT NOT NULL,
+        connections TEXT NOT NULL,
+        duration INTEGER NOT NULL,
+        token_count INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_architecture_feature ON architecture_analysis(feature_id);
+    `);
   }
 
   /**
@@ -143,7 +173,7 @@ class DatabaseService {
 
     // Check if file_path column exists (migration)
     const info = this.db.prepare("PRAGMA table_info(analysis_results)")
-      .all() as any[];
+      .all() as Array<{ cid: number; name: string; type: string; notnull: number; dflt_value: string | null; pk: number }>;
     const hasFilePath = info.some((col) => col.name === "file_path");
 
     if (!hasFilePath) {
@@ -438,6 +468,7 @@ class DatabaseService {
       description?: string;
       attributes?: unknown[];
       relationships?: unknown[];
+      validationRules?: string[];
     },
   ): DbEntity {
     const now = Date.now();
@@ -446,7 +477,7 @@ class DatabaseService {
     if (existing) {
       const stmt = this.db!.prepare(`
         UPDATE entities SET 
-          description = ?, attributes = ?, relationships = ?, updated_at = ?
+          description = ?, attributes = ?, relationships = ?, validation_rules = ?, updated_at = ?
         WHERE id = ?
       `);
       stmt.run(
@@ -457,6 +488,9 @@ class DatabaseService {
         options?.relationships
           ? JSON.stringify(options.relationships)
           : existing.relationships,
+        options?.validationRules
+          ? JSON.stringify(options.validationRules)
+          : existing.validation_rules,
         now,
         existing.id,
       );
@@ -467,10 +501,10 @@ class DatabaseService {
 
     const stmt = this.db!.prepare(`
       INSERT INTO entities (
-        feature_id, entity_name, description, attributes, relationships,
+        feature_id, entity_name, description, attributes, relationships, validation_rules,
         created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       featureId,
@@ -478,6 +512,7 @@ class DatabaseService {
       options?.description ?? null,
       options?.attributes ? JSON.stringify(options.attributes) : null,
       options?.relationships ? JSON.stringify(options.relationships) : null,
+      options?.validationRules ? JSON.stringify(options.validationRules) : null,
       now,
       now,
     );
@@ -818,6 +853,149 @@ class DatabaseService {
     this.db!.prepare("DELETE FROM plans WHERE feature_id = ?").run(featureId);
   }
 
+  /**
+   * Get entity by ID with detailed information
+   */
+  getEntityById(entityId: number): {
+    id: number;
+    feature_id: number;
+    entity_name: string;
+    description: string | null;
+    attributes: string | null;
+    relationships: string | null;
+    validation_rules: string | null;
+    source_file: string | null;
+    line_number: number | null;
+  } | null {
+    const stmt = this.db!.prepare("SELECT * FROM entities WHERE id = ?");
+    const result = stmt.get(entityId) as any;
+    return result ? {
+      ...result,
+      line_number: result.line_number ?? null,
+    } : null;
+  }
+
+  // ========================================
+  // Architecture Analysis Operations
+  // ========================================
+
+  /**
+   * Save or update architecture analysis for a feature
+   */
+  saveArchitectureAnalysis(
+    featureId: number,
+    requestId: string,
+    actors: unknown[],
+    systems: unknown[],
+    processes: unknown[],
+    dataStores: unknown[],
+    connections: unknown[],
+    duration: number,
+    tokenCount?: number,
+  ): { id: number } {
+    const now = Date.now();
+    const existing = this.getArchitectureAnalysis(featureId);
+
+    if (existing) {
+      // Update existing
+      const stmt = this.db!.prepare(`
+        UPDATE architecture_analysis SET 
+          request_id = ?, actors = ?, systems = ?, processes = ?,
+          data_stores = ?, connections = ?, duration = ?, token_count = ?,
+          updated_at = ?
+        WHERE feature_id = ?
+      `);
+      stmt.run(
+        requestId,
+        JSON.stringify(actors),
+        JSON.stringify(systems),
+        JSON.stringify(processes),
+        JSON.stringify(dataStores),
+        JSON.stringify(connections),
+        duration,
+        tokenCount ?? null,
+        now,
+        featureId,
+      );
+      return { id: existing.id };
+    }
+
+    // Insert new
+    const stmt = this.db!.prepare(`
+      INSERT INTO architecture_analysis (
+        feature_id, request_id, actors, systems, processes,
+        data_stores, connections, duration, token_count,
+        created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      featureId,
+      requestId,
+      JSON.stringify(actors),
+      JSON.stringify(systems),
+      JSON.stringify(processes),
+      JSON.stringify(dataStores),
+      JSON.stringify(connections),
+      duration,
+      tokenCount ?? null,
+      now,
+      now,
+    );
+
+    return { id: result.lastInsertRowid as number };
+  }
+
+  /**
+   * Get architecture analysis for a feature
+   */
+  getArchitectureAnalysis(featureId: number): {
+    id: number;
+    feature_id: number;
+    request_id: string;
+    actors: string;
+    systems: string;
+    processes: string;
+    data_stores: string;
+    connections: string;
+    duration: number;
+    token_count: number | null;
+    created_at: number;
+    updated_at: number;
+  } | null {
+    const stmt = this.db!.prepare(`
+      SELECT * FROM architecture_analysis WHERE feature_id = ?
+    `);
+    return stmt.get(featureId) as {
+      id: number;
+      feature_id: number;
+      request_id: string;
+      actors: string;
+      systems: string;
+      processes: string;
+      data_stores: string;
+      connections: string;
+      duration: number;
+      token_count: number | null;
+      created_at: number;
+      updated_at: number;
+    } | null;
+  }
+
+  /**
+   * Delete architecture analysis for a feature
+   */
+  deleteArchitectureAnalysis(featureId: number): void {
+    const stmt = this.db!.prepare(
+      "DELETE FROM architecture_analysis WHERE feature_id = ?",
+    );
+    stmt.run(featureId);
+  }
+
+  // ========================================
+  // Migration Support
+  // ========================================
+
   // ========================================
   // Feature Description Operations
   // ========================================
@@ -1029,23 +1207,35 @@ class DatabaseService {
     created_at: number;
     file_path: string | null;
   } | null {
+    type AnalysisResult = {
+      id: number;
+      request_id: string;
+      feature_id: number;
+      analysis_type: string;
+      content: string;
+      token_count: number | null;
+      duration: number;
+      created_at: number;
+      file_path: string | null;
+    };
+
     if (filePath) {
       const stmt = this.db!.prepare(`
-        SELECT * FROM analysis_results 
-        WHERE feature_id = ? AND analysis_type = ? AND file_path = ?
-        ORDER BY created_at DESC
-        LIMIT 1
-      `);
-      return stmt.get(featureId, analysisType, filePath) as any;
+          SELECT * FROM analysis_results 
+          WHERE feature_id = ? AND analysis_type = ? AND file_path = ?
+          ORDER BY created_at DESC
+          LIMIT 1
+        `);
+      return (stmt.get(featureId, analysisType, filePath) as AnalysisResult | undefined) ?? null;
     }
 
     const stmt = this.db!.prepare(`
-      SELECT * FROM analysis_results 
-      WHERE feature_id = ? AND analysis_type = ?
-      ORDER BY created_at DESC
-      LIMIT 1
-    `);
-    return stmt.get(featureId, analysisType) as any;
+        SELECT * FROM analysis_results 
+        WHERE feature_id = ? AND analysis_type = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
+    return (stmt.get(featureId, analysisType) as AnalysisResult | undefined) ?? null;
   }
 
   /**
@@ -1077,23 +1267,6 @@ class DatabaseService {
     stmt.run(sourceFile, lineNumber, Date.now(), entityId);
   }
 
-  /**
-   * Get entity by ID with source tracking
-   */
-  getEntityById(entityId: number):
-    | DbEntity & {
-      source_file?: string;
-      line_number?: number | null;
-    }
-    | null {
-    const stmt = this.db!.prepare("SELECT * FROM entities WHERE id = ?");
-    return stmt.get(entityId) as
-      | DbEntity & {
-        source_file?: string;
-        line_number?: number | null;
-      }
-      | null;
-  }
 
   // ========================================
   // Migration Support

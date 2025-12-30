@@ -15,6 +15,16 @@ export interface EntityNodeData {
   description: string;
   attributeCount: number;
   relationshipCount: number;
+  attributes?: Array<{
+    name: string;
+    type: string;
+    constraints?: string | null;
+  }>;
+  relationships?: Array<{
+    target: string;
+    type: string;
+    description?: string | null;
+  }>;
 }
 
 export interface EntityDetail {
@@ -25,12 +35,14 @@ export interface EntityDetail {
     name: string;
     type: string;
     description?: string;
+    constraints?: string | null;
   }>;
   relationships: Array<{
     target: string;
     type: string;
     description?: string;
   }>;
+  validationRules: string[];
   sourceFile: string | null;
   lineNumber: number | null;
 }

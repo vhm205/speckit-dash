@@ -1,9 +1,9 @@
 /**
  * Speckit Dashboard - Architecture View
- * Entity diagram visualization using ReactFlow with Dagre auto-layout
+ * AI-powered architecture workflow visualization using ReactFlow
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Node,
@@ -19,112 +19,168 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { Card, CardBody, Button, Chip } from '../../components/ui';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import EntityNode from './EntityNode';
-import RelationshipEdge from './RelationshipEdge';
+import { architectureNodeTypes } from './nodes';
 import { getLayoutedElements } from './layout-utils';
-import type { Feature, Entity } from '../../types';
-
-// Custom node and edge types
-const nodeTypes = {
-  entity: EntityNode,
-};
-
-const edgeTypes = {
-  relationship: RelationshipEdge,
-};
+import { useArchitecture } from '../../hooks/useArchitecture';
+import type { Feature, ArchitectureResult } from '../../types';
 
 export function ArchitectureView() {
   const { featureId } = useParams<{ featureId: string }>();
   const navigate = useNavigate();
   const [feature, setFeature] = useState<Feature | null>(null);
-  const [entities, setEntities] = useState<Entity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingFeature, setIsLoadingFeature] = useState(true);
+  const [featureError, setFeatureError] = useState<string | null>(null);
+
+  const { isLoading: isAnalyzing, error: analysisError, analyzeArchitecture, clearError } = useArchitecture();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+  // Load feature metadata
   useEffect(() => {
-    async function loadFeatureData() {
+    async function loadFeature() {
       if (!featureId) {
-        setIsLoading(false);
-        setError('No feature ID provided');
+        setIsLoadingFeature(false);
+        setFeatureError('No feature ID provided');
         return;
       }
 
-      setIsLoading(true);
-      setError(null);
+      setIsLoadingFeature(true);
+      setFeatureError(null);
 
       try {
         const response = await window.electronAPI.getFeature(Number(featureId));
         if (response.success && response.data) {
           setFeature(response.data.feature);
-          setEntities(response.data.entities);
         } else if (!response.success) {
-          setError(response.error);
+          setFeatureError('error' in response ? response.error : 'Failed to load feature');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load feature');
+        setFeatureError(err instanceof Error ? err.message : 'Failed to load feature');
       } finally {
-        setIsLoading(false);
+        setIsLoadingFeature(false);
       }
     }
 
-    loadFeatureData();
+    loadFeature();
   }, [featureId]);
 
-  // Convert entities to ReactFlow nodes and edges with Dagre auto-layout
-  useEffect(() => {
-    if (entities.length === 0) return;
+  // Trigger architecture analysis
+  const handleAnalyzeArchitecture = useCallback(async (force: boolean = false) => {
+    if (!featureId) return;
 
-    // Create nodes (position will be calculated by Dagre)
-    const newNodes: Node[] = entities.map((entity) => ({
-      id: String(entity.id),
-      type: 'entity',
-      position: { x: 0, y: 0 }, // Temporary position, will be updated by layout
-      data: {
-        label: entity.entityName,
-        attributes: entity.attributes || [],
-        relationships: entity.relationships || [],
-      },
-    }));
+    clearError();
+    const result = await analyzeArchitecture(Number(featureId), force);
 
-    // Create edges from relationships
+    if (result) {
+      convertToReactFlowElements(result);
+    }
+  }, [featureId, analyzeArchitecture, clearError]);
+
+  // Convert architecture data to ReactFlow nodes and edges
+  const convertToReactFlowElements = useCallback((architecture: ArchitectureResult) => {
+    const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
-    entities.forEach((entity) => {
-      (entity.relationships || []).forEach((rel, index) => {
-        const targetEntity = entities.find(
-          (e) => e.entityName.toLowerCase() === rel.target.toLowerCase()
-        );
-        if (targetEntity) {
-          newEdges.push({
-            id: `${entity.id}-${targetEntity.id}-${index}`,
-            source: String(entity.id),
-            target: String(targetEntity.id),
-            type: 'relationship',
-            data: { relationshipType: rel.type as '1:1' | '1:N' | 'N:1' | 'N:N' },
-            markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
-            style: { stroke: '#6366f1', strokeWidth: 2 },
-          });
-        }
+
+    // Create actor nodes
+    architecture.actors.forEach((actor) => {
+      newNodes.push({
+        id: actor.id,
+        type: 'actor',
+        position: { x: 0, y: 0 }, // Will be set by layout
+        data: {
+          label: actor.label,
+          type: actor.type,
+          description: actor.description,
+        },
       });
     });
 
-    // Apply Dagre auto-layout
+    // Create system nodes
+    architecture.systems.forEach((system) => {
+      newNodes.push({
+        id: system.id,
+        type: 'system',
+        position: { x: 0, y: 0 },
+        data: {
+          label: system.label,
+          type: system.type,
+          description: system.description,
+        },
+      });
+    });
+
+    // Create process nodes
+    architecture.processes.forEach((process) => {
+      newNodes.push({
+        id: process.id,
+        type: 'process',
+        position: { x: 0, y: 0 },
+        data: {
+          label: process.label,
+          description: process.description,
+        },
+      });
+    });
+
+    // Create data store nodes
+    architecture.dataStores.forEach((dataStore) => {
+      newNodes.push({
+        id: dataStore.id,
+        type: 'data',
+        position: { x: 0, y: 0 },
+        data: {
+          label: dataStore.label,
+          type: dataStore.type,
+          description: dataStore.description,
+        },
+      });
+    });
+
+    // Create edges from connections
+    architecture.connections.forEach((connection) => {
+      newEdges.push({
+        id: connection.id,
+        source: connection.from,
+        target: connection.to,
+        type: 'smoothstep',
+        label: connection.label,
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#64748b', strokeWidth: 2 },
+      });
+    });
+
+    // Apply auto-layout with increased spacing for architectural diagrams
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       newNodes,
       newEdges,
-      { direction: 'TB', nodeWidth: 280, nodeHeight: 200 }
+      {
+        direction: 'TB',
+        nodeWidth: 240,
+        nodeHeight: 180,
+        rankSeparation: 180,  // More vertical space between levels
+        nodeSeparation: 120,  // More horizontal space between nodes
+      },
     );
 
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-  }, [entities, setNodes, setEdges]);
+  }, [setNodes, setEdges]);
+
+  // Auto-analyze on mount
+  useEffect(() => {
+    if (featureId && !isLoadingFeature && feature) {
+      handleAnalyzeArchitecture();
+    }
+  }, [featureId, isLoadingFeature, feature]);  // Removed handleAnalyzeArchitecture to avoid loop
+
+  const isLoading = isLoadingFeature || isAnalyzing;
+  const error = featureError || analysisError;
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner size="lg" label="Loading architecture..." />
+        <LoadingSpinner size="lg" label={isAnalyzing ? "AI is analyzing architecture..." : "Loading feature..."} />
       </div>
     );
   }
@@ -141,6 +197,8 @@ export function ArchitectureView() {
       </div>
     );
   }
+
+  const totalComponents = nodes.length;
 
   return (
     <div className="space-y-4">
@@ -196,25 +254,62 @@ export function ArchitectureView() {
             </svg>
             <span className="hidden sm:inline">View Summary</span>
           </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/schema`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            <span className="hidden sm:inline">View Schema</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/ai-analysis`)}
+            className="text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span className="hidden sm:inline">AI Analysis</span>
+          </Button>
+          <Button
+            size="sm"
+            color="primary"
+            onPress={() => handleAnalyzeArchitecture(true)}
+            isDisabled={isAnalyzing}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
         </div>
         <Chip color="primary" variant="flat">
-          {entities.length} Entities
+          {totalComponents} Components
         </Chip>
       </div>
 
-      {/* Diagram */}
-      {entities.length === 0 ? (
+      {/* Architecture Diagram */}
+      {nodes.length === 0 ? (
         <Card>
           <CardBody className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 flex items-center justify-center">
+              <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2">No Entities Found</h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Add entities to data-model.md to visualize the architecture.
+            <h3 className="text-lg font-semibold mb-2">No Architecture Information Found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              The AI couldn't extract architecture components from the documentation.
+              <br />
+              Ensure your spec.md, plan.md, or other documentation files contain architectural details.
             </p>
+            <Button color="primary" onPress={() => handleAnalyzeArchitecture(true)}>
+              Try Again
+            </Button>
           </CardBody>
         </Card>
       ) : (
@@ -224,22 +319,48 @@ export function ArchitectureView() {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
+            nodeTypes={architectureNodeTypes}
             fitView
             attributionPosition="bottom-left"
           >
             <Background color="#e5e7eb" gap={16} />
             <Controls />
             <MiniMap
-              nodeColor="#6366f1"
+              nodeColor={(node) => {
+                switch (node.type) {
+                  case 'actor': return '#3b82f6';  // Blue
+                  case 'system': return '#a855f7';  // Purple
+                  case 'process': return '#f97316'; // Orange
+                  case 'data': return '#10b981';     // Green
+                  default: return '#6366f1';
+                }
+              }}
               maskColor="rgba(0, 0, 0, 0.1)"
               className="bg-white dark:bg-gray-800"
             />
-            <Panel position="top-right" className="bg-white dark:bg-gray-800 p-2 rounded shadow">
-              <div className="text-xs text-gray-500">
-                Drag to pan • Scroll to zoom
+            <Panel position="top-right" className="bg-white dark:bg-gray-800 p-3 rounded shadow-lg">
+              <div className="text-xs space-y-2">
+                <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Legend</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-gray-600 dark:text-gray-400">Actors/Users</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                  <span className="text-gray-600 dark:text-gray-400">Systems/Modules</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                  <span className="text-gray-600 dark:text-gray-400">Processes/Actions</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-gray-600 dark:text-gray-400">Data Stores</span>
+                </div>
               </div>
+            </Panel>
+            <Panel position="bottom-right" className="bg-white dark:bg-gray-800 p-2 rounded shadow text-xs text-gray-500">
+              Drag to pan • Scroll to zoom
             </Panel>
           </ReactFlow>
         </Card>

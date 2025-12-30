@@ -99,10 +99,12 @@ async function syncProjectFeatures(projectId, projectPath) {
                 const content = fs_1.default.readFileSync(dataModelPath, "utf-8");
                 const parsed = await (0, data_model_parser_1.parseDataModelContent)(content);
                 for (const entity of parsed.entities) {
+                    console.log({ entity });
                     database_1.databaseService.upsertEntity(feature.id, entity.name, {
                         description: entity.description || undefined,
                         attributes: entity.attributes,
                         relationships: entity.relationships,
+                        validationRules: entity.validationRules,
                     });
                 }
             }
@@ -116,7 +118,6 @@ async function syncProjectFeatures(projectId, projectPath) {
             }
             // Parse and sync plan.md if exists
             const planPath = path_1.default.join(featurePath, "plan.md");
-            console.log({ planPath, isExists: fs_1.default.existsSync(planPath) });
             if (fs_1.default.existsSync(planPath)) {
                 const content = fs_1.default.readFileSync(planPath, "utf-8");
                 const parsed = await (0, plan_parser_1.parsePlanContent)(content);

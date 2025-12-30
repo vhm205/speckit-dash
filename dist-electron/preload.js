@@ -74,6 +74,10 @@ electron_1.contextBridge.exposeInMainWorld("electronAPI", {
     generateSchema: (featureId) => electron_1.ipcRenderer.invoke("schema:generate", { featureId }),
     getEntityDetails: (entityId) => electron_1.ipcRenderer.invoke("schema:get-entity-details", { entityId }),
     // ========================================
+    // Architecture Analysis Methods
+    // ========================================
+    analyzeArchitecture: (featureId, force) => electron_1.ipcRenderer.invoke("architecture:analyze", { featureId, force }),
+    // ========================================
     // File Content Methods
     // ========================================
     readSpecFile: (featureId, fileType) => electron_1.ipcRenderer.invoke("files:read-spec", { featureId, fileType }),

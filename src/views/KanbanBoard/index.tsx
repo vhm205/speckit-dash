@@ -199,6 +199,27 @@ export function KanbanBoard() {
             </svg>
             <span className="hidden sm:inline">View Architecture</span>
           </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/schema`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            <span className="hidden sm:inline">View Schema</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/ai-analysis`)}
+            className="text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span className="hidden sm:inline">AI Analysis</span>
+          </Button>
           <Button size="sm" variant="flat" onPress={expandAll}>
             Expand All
           </Button>

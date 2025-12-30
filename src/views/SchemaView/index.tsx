@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardBody, Button } from '../../components/ui';
 import { useSchema } from '../../hooks/useSchema';
 import SchemaGraph from './SchemaGraph';
@@ -25,6 +25,7 @@ export function SchemaView() {
   } = useSchema();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>();
+  const navigate = useNavigate();
 
   const numericFeatureId = featureId ? parseInt(featureId, 10) : null;
 
@@ -165,8 +166,19 @@ export function SchemaView() {
   return (
     <div className="h-[calc(100vh-200px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          isIconOnly
+          variant="flat"
+          size="sm"
+          onPress={() => navigate('/features')}
+          aria-label="Back to features"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </Button>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Schema Visualization
           </h1>
@@ -174,13 +186,37 @@ export function SchemaView() {
             {metadata?.entityCount || 0} entities, {metadata?.relationshipCount || 0} relationships
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => numericFeatureId && generateSchema(numericFeatureId)}
-        >
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/kanban`)}
+          >
+            Tasks
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/summary`)}
+          >
+            Summary
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/ai-analysis`)}
+            className="text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800"
+          >
+            AI Analysis
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => numericFeatureId && generateSchema(numericFeatureId)}
+          >
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Graph Container */}

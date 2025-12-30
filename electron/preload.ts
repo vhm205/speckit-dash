@@ -145,6 +145,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("schema:get-entity-details", { entityId }),
 
   // ========================================
+  // Architecture Analysis Methods
+  // ========================================
+
+  analyzeArchitecture: (featureId: number, force?: boolean) =>
+    ipcRenderer.invoke("architecture:analyze", { featureId, force }),
+
+  // ========================================
   // File Content Methods
   // ========================================
 

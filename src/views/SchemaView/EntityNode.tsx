@@ -3,17 +3,35 @@
  * Custom ReactFlow node for displaying entities in the schema diagram
  */
 
+import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 
-interface EntityNodeData {
+interface EntityAttribute {
+  name: string;
+  type: string;
+  constraints?: string | null;
+}
+
+interface EntityRelationship {
+  target: string;
+  type: string;
+  description?: string | null;
+}
+
+export interface EntityNodeData {
   entityName: string;
   description: string;
   attributeCount: number;
   relationshipCount: number;
+  attributes?: EntityAttribute[];
+  relationships?: EntityRelationship[];
 }
 
-export function EntityNode({ data, selected }: NodeProps<EntityNodeData>) {
+export const EntityNode = memo(function EntityNode({ data, selected }: NodeProps<EntityNodeData>) {
+  const attributes = data.attributes || [];
+  const relationships = data.relationships || [];
+
   return (
     <div
       className={`
@@ -22,7 +40,7 @@ export function EntityNode({ data, selected }: NodeProps<EntityNodeData>) {
           ? 'border-violet-500 shadow-lg shadow-violet-500/20'
           : 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700'
         }
-        min-w-[180px] max-w-[250px]
+        min-w-[220px] max-w-[280px]
       `}
     >
       {/* Input handle */}
@@ -37,32 +55,66 @@ export function EntityNode({ data, selected }: NodeProps<EntityNodeData>) {
         <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
           {data.entityName}
         </h3>
-      </div>
-
-      {/* Body */}
-      <div className="p-3 space-y-2">
         {data.description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {data.description}
           </p>
         )}
-
-        {/* Stats */}
-        <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
-            {data.attributeCount} attrs
-          </span>
-          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            {data.relationshipCount} rels
-          </span>
-        </div>
       </div>
+
+      {/* Attributes Section */}
+      <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+        <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+          Attributes ({data.attributeCount})
+        </div>
+        {attributes.length === 0 ? (
+          <p className="text-xs text-gray-400 italic">No attributes defined</p>
+        ) : (
+          <ul className="space-y-0.5">
+            {attributes.slice(0, 5).map((attr, index) => (
+              <li key={index} className="flex items-center text-xs">
+                <span className="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[80px]">
+                  {attr.name}
+                </span>
+                <span className="text-gray-400 mx-1">:</span>
+                <span className="text-violet-500 font-mono text-[10px] truncate max-w-[100px]">
+                  {attr.type}
+                </span>
+              </li>
+            ))}
+            {attributes.length > 5 && (
+              <li className="text-xs text-gray-400 italic">
+                +{attributes.length - 5} more...
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+
+      {/* Relationships Section */}
+      {relationships.length > 0 && (
+        <div className="px-3 py-2">
+          <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">
+            Relations ({data.relationshipCount})
+          </div>
+          <ul className="space-y-0.5">
+            {relationships.slice(0, 3).map((rel, index) => (
+              <li key={index} className="flex items-center gap-1 text-xs">
+                <svg className="w-3 h-3 text-violet-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+                <span className="text-purple-500 font-mono text-[10px]">{rel.type}</span>
+                <span className="text-gray-600 dark:text-gray-400 truncate">{rel.target}</span>
+              </li>
+            ))}
+            {relationships.length > 3 && (
+              <li className="text-xs text-gray-400 italic">
+                +{relationships.length - 3} more...
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
 
       {/* Output handle */}
       <Handle
@@ -72,6 +124,6 @@ export function EntityNode({ data, selected }: NodeProps<EntityNodeData>) {
       />
     </div>
   );
-}
+});
 
 export default EntityNode;

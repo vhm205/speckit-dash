@@ -22,6 +22,7 @@ interface ParsedEntity {
   description: string | null;
   attributes: EntityAttribute[];
   relationships: EntityRelationship[];
+  validationRules: string[];
 }
 
 interface ParsedDataModel {
@@ -132,6 +133,7 @@ export async function parseDataModelContent(
         description: null,
         attributes: [],
         relationships: [],
+        validationRules: [],
       };
       result.entities.push(currentEntity);
       currentSubSection = "";
@@ -166,16 +168,23 @@ export async function parseDataModelContent(
       continue;
     }
 
-    // Check for bold subsection markers (e.g., **Attributes**:, **Relationships**:)
+    // Check for subsection markers (e.g., **Attributes**:, **Relationships**:)
+    // Note: The markdown parser strips ** markers, so we check for the text content directly
+    // These are typically short single-word or two-word labels ending with ":"
     if (node.type === "paragraph" && currentEntity) {
       const text = extractText(node).trim();
       const lowerText = text.toLowerCase();
 
-      // Check if this is a section marker
-      if (
-        lowerText.startsWith("**") ||
-        /^\*\*[^*]+\*\*:?\s*$/.test(text)
-      ) {
+      // Check if this looks like a section header (short text, typically ends with ":" or is a keyword)
+      // The markdown parser converts **Bold**: to just "Bold:" in the text
+      const isLikelySectionHeader = (
+        // Short text (less than 30 chars) that ends with colon
+        (text.length < 30 && text.endsWith(":")) ||
+        // Or exactly matches known section names
+        /^(attributes|relationships|validation rules|storage|lifecycle|state transitions):?$/i.test(lowerText)
+      );
+
+      if (isLikelySectionHeader) {
         if (lowerText.includes("attribute") || lowerText.includes("field")) {
           currentSubSection = "attributes";
           continue;
@@ -186,10 +195,18 @@ export async function parseDataModelContent(
           currentSubSection = "relationships";
           continue;
         } else if (
-          lowerText.includes("lifecycle") || lowerText.includes("validation")
+          lowerText.includes("validation") || lowerText.includes("rule")
         ) {
-          currentSubSection = lowerText.replace(/\*\*/g, "").replace(":", "")
-            .trim();
+          currentSubSection = "validation";
+          continue;
+        } else if (
+          lowerText.includes("lifecycle") || lowerText.includes("state")
+        ) {
+          currentSubSection = lowerText.replace(":", "").trim();
+          continue;
+        } else if (lowerText.includes("storage")) {
+          // Skip storage sections, they're not parsed
+          currentSubSection = "storage";
           continue;
         }
       }
@@ -216,6 +233,7 @@ export async function parseDataModelContent(
           // Handle format: `name` (TYPE, CONSTRAINTS...): Description
           // or: name (TYPE, CONSTRAINTS...): Description
           const match = item.match(/^`?([^`(]+)`?\s*\(([^)]+)\)\s*:\s*(.*)$/);
+
           if (match) {
             const name = match[1].trim();
             const typeInfo = match[2].trim();
@@ -257,8 +275,16 @@ export async function parseDataModelContent(
             });
           }
         });
+      } else if (currentSubSection === "validation") {
+        // Parse validation rules
+        items.forEach((item) => {
+          if (item.trim()) {
+            currentEntity!.validationRules.push(item.trim());
+          }
+        });
       }
     }
+
 
     // Parse tables (for structured entity definitions)
     if (

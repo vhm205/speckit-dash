@@ -183,8 +183,8 @@ test gap analysis → verify missing sections highlighted.
       src/components/AISettings/OllamaConfig.tsx
 - [x] T048 [P] [US2] Create ConnectionTest component in
       src/components/AISettings/ConnectionTest.tsx
-- [ ] T049 [US2] Integrate AISettings into app settings/preferences view
-- [ ] T050 [US2] Create AIProviderContext in src/contexts/AIProviderContext.tsx
+- [x] T049 [US2] Integrate AISettings into app settings/preferences view
+- [x] T050 [US2] Create AIProviderContext in src/contexts/AIProviderContext.tsx
       for state management
 
 #### Analysis UI Views
@@ -199,12 +199,12 @@ test gap analysis → verify missing sections highlighted.
       src/views/AIAnalysis/GapAnalysisView.tsx
 - [x] T055 [P] [US2] Create AnalysisHistory component in
       src/views/AIAnalysis/AnalysisHistory.tsx
-- [ ] T056 [US2] Create useAIAnalysis custom hook in src/hooks/useAIAnalysis.ts
-- [ ] T057 [US2] Add routes for /ai-analysis in src/App.tsx
-- [ ] T058 [US2] Add navigation menu items for AI Analysis views
-- [ ] T059 [US2] Implement loading states and error handling UI for all AI
+- [x] T056 [US2] Create useAIAnalysis custom hook in src/hooks/useAIAnalysis.ts
+- [x] T057 [US2] Add routes for /ai-analysis in src/App.tsx
+- [x] T058 [US2] Add navigation menu items for AI Analysis views
+- [x] T059 [US2] Implement loading states and error handling UI for all AI
       operations
-- [ ] T060 [US2] Add setup guide modal that displays when no AI provider is
+- [x] T060 [US2] Add setup guide modal that displays when no AI provider is
       configured
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work
@@ -262,14 +262,14 @@ optimizes for readability.
       src/views/SchemaView/EntityNode.tsx
 - [x] T076 [P] [US3] Create EntityDetails side panel in
       src/views/SchemaView/EntityDetails.tsx
-- [ ] T077 [US3] Create useSchema custom hook in src/hooks/useSchema.ts
-- [ ] T078 [US3] Configure ReactFlow with zoom, pan, and controls
-- [ ] T079 [US3] Add interactive node click handlers to show entity details
-- [ ] T080 [US3] Implement relationship edge styling and labels
-- [ ] T081 [US3] Add routes for /schema-view in src/App.tsx
-- [ ] T082 [US3] Add navigation menu items for Schema View
-- [ ] T083 [US3] Add empty state UI when no entities are found
-- [ ] T084 [US3] Add loading state for schema generation
+- [x] T077 [US3] Create useSchema custom hook in src/hooks/useSchema.ts
+- [x] T078 [US3] Configure ReactFlow with zoom, pan, and controls
+- [x] T079 [US3] Add interactive node click handlers to show entity details
+- [x] T080 [US3] Implement relationship edge styling and labels
+- [x] T081 [US3] Add routes for /schema-view in src/App.tsx
+- [x] T082 [US3] Add navigation menu items for Schema View
+- [x] T083 [US3] Add empty state UI when no entities are found
+- [x] T084 [US3] Add loading state for schema generation
 
 **Checkpoint**: All user stories should now be independently functional -
 visualization + AI analysis + schema diagrams
@@ -280,7 +280,7 @@ visualization + AI analysis + schema diagrams
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T085 [P] Update GEMINI.md with new technology stack (AI SDK, ReactFlow
+- [x] T085 [P] Update GEMINI.md with new technology stack (AI SDK, ReactFlow
       usage patterns)
 - [ ] T086 [P] Add JSDoc documentation to all new services
 - [ ] T087 Code review: verify TypeScript strict mode compliance across all new

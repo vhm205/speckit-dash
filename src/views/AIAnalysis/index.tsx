@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardBody, Button } from '../../components/ui';
 import { useAIProvider } from '../../contexts/AIProviderContext';
 import SummaryView from './SummaryView';
@@ -16,6 +16,7 @@ type AnalysisTab = 'summary' | 'consistency' | 'gaps' | 'history';
 
 export function AIAnalysis() {
   const { featureId } = useParams<{ featureId: string }>();
+  const navigate = useNavigate();
   const { isConfigured, activeProvider } = useAIProvider();
   const [activeTab, setActiveTab] = useState<AnalysisTab>('summary');
 
@@ -85,14 +86,48 @@ export function AIAnalysis() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          isIconOnly
+          variant="flat"
+          size="sm"
+          onPress={() => navigate('/features')}
+          aria-label="Back to features"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </Button>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             AI Analysis
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Powered by {activeProvider === 'openai' ? 'OpenAI' : 'Ollama'}
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/kanban`)}
+          >
+            Tasks
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/summary`)}
+          >
+            Summary
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/schema`)}
+          >
+            Schema
+          </Button>
         </div>
       </div>
 
