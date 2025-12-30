@@ -3,39 +3,6 @@
  * Speckit Dashboard - Spec Parser
  * Parse spec.md files to extract title, status, requirements, and user stories
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -65,10 +32,12 @@ async function parseSpecFile(filePath) {
  * Parse spec.md content string
  */
 async function parseSpecContent(content) {
-    const { unified } = await Promise.resolve().then(() => __importStar(require("unified")));
-    const { default: remarkParse } = await Promise.resolve().then(() => __importStar(require("remark-parse")));
-    const { default: remarkGfm } = await Promise.resolve().then(() => __importStar(require("remark-gfm")));
-    const { default: remarkFrontmatter } = await Promise.resolve().then(() => __importStar(require("remark-frontmatter")));
+    // Use Function constructor to prevent TypeScript from converting to require()
+    const dynamicImport = new Function("specifier", "return import(specifier)");
+    const { unified } = await dynamicImport("unified");
+    const { default: remarkParse } = await dynamicImport("remark-parse");
+    const { default: remarkGfm } = await dynamicImport("remark-gfm");
+    const { default: remarkFrontmatter } = await dynamicImport("remark-frontmatter");
     const tree = unified()
         .use(remarkParse)
         .use(remarkGfm)

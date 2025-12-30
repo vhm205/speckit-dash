@@ -6,6 +6,7 @@
 import { ReactNode } from 'react';
 import { ProjectProvider } from '../contexts/ProjectContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { SettingsProvider } from '../contexts/SettingsContext';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -14,9 +15,12 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider>
-      <ProjectProvider>{children}</ProjectProvider>
+      <SettingsProvider>
+        <ProjectProvider>{children}</ProjectProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }
 
 export default Providers;
+

@@ -237,21 +237,22 @@ with task bars and dependency arrows
       dependencies from plan.md
 - [x] T070 [P] [US4] Create IPC handler for `features:get` in
       `electron/services/ipc-handlers.ts` to return feature with plan data
-- [ ] T071 [US4] Create GanttTimeline view component in
+- [x] T071 [US4] Create GanttTimeline view component in
       `src/views/GanttTimeline/index.tsx` with timeline rendering
-- [ ] T072 [P] [US4] Create GanttTask component in
+- [x] T072 [P] [US4] Create GanttTask component in
       `src/views/GanttTimeline/GanttTask.tsx` for task bars with progress
       indicators
-- [ ] T073 [P] [US4] Create DependencyArrow component in
+- [x] T073 [P] [US4] Create DependencyArrow component in
       `src/views/GanttTimeline/DependencyArrow.tsx` for connecting dependent
       tasks
-- [ ] T074 [US4] Add gantt route to App.tsx with `/features/:featureId/gantt`
+- [x] T074 [US4] Add gantt route to App.tsx with `/features/:featureId/gantt`
       path
-- [ ] T075 [US4] Implement plan data fetching in GanttTimeline using IPC
-- [ ] T076 [US4] Calculate task positions and durations based on phase order
-- [ ] T077 [US4] Render dependency connections using SVG overlays
-- [ ] T078 [US4] Add zoom/pan functionality for large timelines
-- [ ] T079 [US4] Add requirement-to-task mapping tooltips
+- [x] T075 [US4] Implement plan data fetching in GanttTimeline using IPC
+- [x] T076 [US4] Calculate task positions and durations based on phase order
+- [x] T077 [US4] Render dependency connections using SVG overlays
+- [x] T078 [US4] Add zoom/pan functionality for large timelines
+- [ ] T079 [US4] Add requirement-to-task mapping tooltips (optional - requires
+      requirement data linkage)
 
 **Checkpoint**: User Story 4 complete - plan timelines are visualized
 
@@ -266,32 +267,32 @@ render with correct relationships
 
 ### Implementation for User Story 5
 
-- [ ] T080 [P] [US5] Install diagram libraries: `reactflow@^11.10.0`,
+- [x] T080 [P] [US5] Install diagram libraries: `reactflow@^11.10.0`,
       `dagre@^0.8.5`, `@types/dagre`
 - [x] T081 [P] [US5] Create data-model parser in
       `electron/services/parser/data-model-parser.ts` to extract entities and
       relationships from markdown
 - [x] T082 [P] [US5] Create IPC handler for `entities:list` in
       `electron/services/ipc-handlers.ts` to query entities table
-- [ ] T083 [US5] Create entity service wrapper in `src/services/ipc.ts` with
+- [x] T083 [US5] Create entity service wrapper in `src/services/ipc.ts` with
       type-safe entity methods
-- [ ] T084 [US5] Create ArchitectureView view component in
+- [x] T084 [US5] Create ArchitectureView view component in
       `src/views/ArchitectureView/index.tsx` with ReactFlow canvas
-- [ ] T085 [P] [US5] Create EntityNode component in
+- [x] T085 [P] [US5] Create EntityNode component in
       `src/views/ArchitectureView/EntityNode.tsx` as custom ReactFlow node with
       attributes display
-- [ ] T086 [P] [US5] Create RelationshipEdge component in
+- [x] T086 [P] [US5] Create RelationshipEdge component in
       `src/views/ArchitectureView/RelationshipEdge.tsx` as custom ReactFlow edge
       with type labels
-- [ ] T087 [US5] Create auto-layout utility in
+- [x] T087 [US5] Create auto-layout utility in
       `src/views/ArchitectureView/layout-utils.ts` using Dagre algorithm
-- [ ] T088 [US5] Add architecture route to App.tsx with
+- [x] T088 [US5] Add architecture route to App.tsx with
       `/features/:featureId/architecture` path
-- [ ] T089 [US5] Implement entity data fetching in ArchitectureView using IPC
-- [ ] T090 [US5] Convert entities to ReactFlow nodes and edges
-- [ ] T091 [US5] Apply Dagre layout algorithm to position nodes
-- [ ] T092 [US5] Add interactive features: zoom, pan, node selection
-- [ ] T093 [US5] Create ResearchView component in
+- [x] T089 [US5] Implement entity data fetching in ArchitectureView using IPC
+- [x] T090 [US5] Convert entities to ReactFlow nodes and edges
+- [x] T091 [US5] Apply Dagre layout algorithm to position nodes
+- [x] T092 [US5] Add interactive features: zoom, pan, node selection
+- [x] T093 [US5] Create ResearchView component in
       `src/views/ArchitectureView/ResearchView.tsx` to display research
       decisions
 

@@ -32,13 +32,30 @@ export function SummaryView({ featureId }: SummaryViewProps) {
     loadFeature();
   }, [featureId]);
 
+  // Load cached summary when selected file changes
+  useEffect(() => {
+    async function loadCached() {
+      if (!specPath || !selectedFile) return;
+      const basePath = specPath.replace(/spec\.md$/, '');
+      const filePath = basePath + selectedFile;
+
+      const summaryResult = await generateSummary(featureId, filePath, false);
+      if (summaryResult) {
+        setResult(summaryResult);
+      } else {
+        setResult(null);
+      }
+    }
+    loadCached();
+  }, [featureId, specPath, selectedFile, generateSummary]);
+
   const handleGenerate = async () => {
     if (!specPath) return;
 
     const basePath = specPath.replace(/spec\.md$/, '');
     const filePath = basePath + selectedFile;
 
-    const summaryResult = await generateSummary(featureId, filePath);
+    const summaryResult = await generateSummary(featureId, filePath, true);
     if (summaryResult) {
       setResult(summaryResult);
     }

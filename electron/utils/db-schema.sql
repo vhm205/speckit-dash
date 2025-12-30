@@ -118,3 +118,22 @@ CREATE INDEX IF NOT EXISTS idx_entities_feature ON entities(feature_id);
 CREATE INDEX IF NOT EXISTS idx_requirements_feature ON requirements(feature_id);
 CREATE INDEX IF NOT EXISTS idx_plans_feature ON plans(feature_id);
 CREATE INDEX IF NOT EXISTS idx_research_feature ON research_decisions(feature_id);
+
+-- Analysis results table: stores AI-generated analysis (summaries, consistency checks, etc.)
+CREATE TABLE IF NOT EXISTS analysis_results (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id TEXT UNIQUE NOT NULL,
+  feature_id INTEGER NOT NULL,
+  file_path TEXT, -- Nullable for checks involving multiple files
+  analysis_type TEXT NOT NULL CHECK(analysis_type IN ('summary', 'consistency', 'gaps')),
+  content TEXT NOT NULL, -- JSON formatted result
+  token_count INTEGER,
+  duration INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+);
+
+-- Additional indexes for analysis results
+CREATE INDEX IF NOT EXISTS idx_analysis_feature ON analysis_results(feature_id);
+CREATE INDEX IF NOT EXISTS idx_analysis_request ON analysis_results(request_id);
+

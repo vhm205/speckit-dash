@@ -23,7 +23,7 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: false, // Required for better-sqlite3 native module
     },
-    titleBarStyle: "hiddenInset",
+    // titleBarStyle: "hiddenInset",
     show: false,
     backgroundColor: "#1f2937", // gray-800
   });

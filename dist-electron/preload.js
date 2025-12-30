@@ -55,7 +55,11 @@ electron_1.contextBridge.exposeInMainWorld("electronAPI", {
     // ========================================
     // AI Analysis Methods
     // ========================================
-    generateSummary: (featureId, filePath) => electron_1.ipcRenderer.invoke("ai-analysis:generate-summary", { featureId, filePath }),
+    generateSummary: (featureId, filePath, force) => electron_1.ipcRenderer.invoke("ai-analysis:generate-summary", {
+        featureId,
+        filePath,
+        force,
+    }),
     checkConsistency: (featureId, files) => electron_1.ipcRenderer.invoke("ai-analysis:check-consistency", { featureId, files }),
     findGaps: (featureId, filePath) => electron_1.ipcRenderer.invoke("ai-analysis:find-gaps", { featureId, filePath }),
     getAnalysisHistory: (featureId, analysisType, limit) => electron_1.ipcRenderer.invoke("ai-analysis:get-history", {

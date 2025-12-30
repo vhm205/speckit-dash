@@ -73,10 +73,14 @@ export async function parseDataModelFile(
 export async function parseDataModelContent(
   content: string,
 ): Promise<ParsedDataModel> {
-  const { unified } = await import("unified");
-  const { default: remarkParse } = await import("remark-parse");
-  const { default: remarkGfm } = await import("remark-gfm");
-  const { default: remarkFrontmatter } = await import("remark-frontmatter");
+  // Use Function constructor to prevent TypeScript from converting to require()
+  const dynamicImport = new Function("specifier", "return import(specifier)");
+  const { unified } = await dynamicImport("unified");
+  const { default: remarkParse } = await dynamicImport("remark-parse");
+  const { default: remarkGfm } = await dynamicImport("remark-gfm");
+  const { default: remarkFrontmatter } = await dynamicImport(
+    "remark-frontmatter",
+  );
 
   const tree = unified()
     .use(remarkParse)
@@ -98,7 +102,7 @@ export async function parseDataModelContent(
   for (let i = 0; i < children.length; i++) {
     const node = children[i];
 
-    // Track main section headings (## Entity Name)
+    // Track section headings (## Section Name) - these are categories, not entities
     if (node.type === "heading" && node.depth === 2) {
       const text = extractText(node);
 
@@ -107,26 +111,35 @@ export async function parseDataModelContent(
         text.toLowerCase().includes("summary")
       ) {
         currentSection = "overview";
-        currentEntity = null;
       } else if (text.toLowerCase().includes("relationship")) {
         currentSection = "relationships";
       } else {
-        // Assume it's an entity name
-        currentSection = "entity";
-        currentEntity = {
-          name: text.trim(),
-          description: null,
-          attributes: [],
-          relationships: [],
-        };
-        result.entities.push(currentEntity);
+        // It's just a category section (like "Core Entities")
+        currentSection = text.toLowerCase();
       }
+      currentEntity = null;
       currentSubSection = "";
       continue;
     }
 
-    // Track subsections (### Attributes, ### Relationships)
+    // Track entity headings (### Entity Name) - these ARE the entities
     if (node.type === "heading" && node.depth === 3) {
+      const text = extractText(node);
+
+      // Create new entity
+      currentEntity = {
+        name: text.trim(),
+        description: null,
+        attributes: [],
+        relationships: [],
+      };
+      result.entities.push(currentEntity);
+      currentSubSection = "";
+      continue;
+    }
+
+    // Track subsections (#### Attributes, #### Relationships) or bold headers
+    if (node.type === "heading" && node.depth === 4) {
       const text = extractText(node).toLowerCase();
 
       if (
@@ -153,9 +166,40 @@ export async function parseDataModelContent(
       continue;
     }
 
-    // Parse entity description
+    // Check for bold subsection markers (e.g., **Attributes**:, **Relationships**:)
+    if (node.type === "paragraph" && currentEntity) {
+      const text = extractText(node).trim();
+      const lowerText = text.toLowerCase();
+
+      // Check if this is a section marker
+      if (
+        lowerText.startsWith("**") ||
+        /^\*\*[^*]+\*\*:?\s*$/.test(text)
+      ) {
+        if (lowerText.includes("attribute") || lowerText.includes("field")) {
+          currentSubSection = "attributes";
+          continue;
+        } else if (
+          lowerText.includes("relationship") ||
+          lowerText.includes("association")
+        ) {
+          currentSubSection = "relationships";
+          continue;
+        } else if (
+          lowerText.includes("lifecycle") || lowerText.includes("validation")
+        ) {
+          currentSubSection = lowerText.replace(/\*\*/g, "").replace(":", "")
+            .trim();
+          continue;
+        }
+      }
+    }
+
+    // Parse entity description (only if no subsection is active)
     if (
-      node.type === "paragraph" && currentEntity && !currentEntity.description
+      node.type === "paragraph" && currentEntity &&
+      !currentEntity.description &&
+      !currentSubSection
     ) {
       currentEntity.description = extractText(node);
       continue;
@@ -169,14 +213,34 @@ export async function parseDataModelContent(
 
       if (currentSubSection === "attributes") {
         items.forEach((item) => {
-          // Parse patterns like "name (type): constraint" or "name: type"
-          const match = item.match(/^([^(:]+)\s*(?:\(([^)]+)\))?[:\s]*(.*)$/);
+          // Handle format: `name` (TYPE, CONSTRAINTS...): Description
+          // or: name (TYPE, CONSTRAINTS...): Description
+          const match = item.match(/^`?([^`(]+)`?\s*\(([^)]+)\)\s*:\s*(.*)$/);
           if (match) {
+            const name = match[1].trim();
+            const typeInfo = match[2].trim();
+            const description = match[3].trim();
+
+            // Split type information by comma to separate type from constraints
+            const typeParts = typeInfo.split(",").map((p) => p.trim());
+            const type = typeParts[0]; // First part is the data type
+            const constraints = typeParts.slice(1).join(", ") || null;
+
             currentEntity!.attributes.push({
-              name: match[1].trim(),
-              type: match[2]?.trim() || "string",
-              constraints: match[3]?.trim() || null,
+              name,
+              type,
+              constraints: constraints || description || null,
             });
+          } else {
+            // Fallback: try simpler patterns
+            const simpleMatch = item.match(/^`?([^`:]+)`?:?\s*(.+)$/);
+            if (simpleMatch) {
+              currentEntity!.attributes.push({
+                name: simpleMatch[1].trim(),
+                type: simpleMatch[2].trim(),
+                constraints: null,
+              });
+            }
           }
         });
       } else if (currentSubSection === "relationships") {

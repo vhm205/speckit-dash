@@ -92,11 +92,13 @@ class DatabaseService {
     this.db.pragma("foreign_keys = ON");
 
     // Read and execute schema
-    // When compiled, __dirname is dist-electron/services/, so go up 2 levels to project root
+    // When compiled, __dirname is dist-electron/services/
+    // We need to resolve to where the source files are or where the schema is copied
+    // For development with electron-vite/ts, we can try relative to project root
     const schemaPath = path.join(
       __dirname,
-      "..",
-      "..",
+      "..", // dist-electron
+      "..", // root
       "electron",
       "utils",
       "db-schema.sql",
@@ -108,6 +110,50 @@ class DatabaseService {
     for (const stmt of statements) {
       if (stmt.trim()) {
         this.db.exec(stmt);
+      }
+    }
+
+    // Ensure analysis_results table exists (as a migration/safeguard)
+    this.ensureAnalysisResultsTable();
+  }
+
+  /**
+   * Ensure the analysis_results table exists
+   */
+  private ensureAnalysisResultsTable(): void {
+    if (!this.db) return;
+
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS analysis_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        request_id TEXT UNIQUE NOT NULL,
+        feature_id INTEGER NOT NULL,
+        file_path TEXT,
+        analysis_type TEXT NOT NULL CHECK(analysis_type IN ('summary', 'consistency', 'gaps')),
+        content TEXT NOT NULL,
+        token_count INTEGER,
+        duration INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_analysis_feature ON analysis_results(feature_id);
+      CREATE INDEX IF NOT EXISTS idx_analysis_request ON analysis_results(request_id);
+    `);
+
+    // Check if file_path column exists (migration)
+    const info = this.db.prepare("PRAGMA table_info(analysis_results)")
+      .all() as any[];
+    const hasFilePath = info.some((col) => col.name === "file_path");
+
+    if (!hasFilePath) {
+      try {
+        this.db.exec("ALTER TABLE analysis_results ADD COLUMN file_path TEXT");
+      } catch (err) {
+        console.error(
+          "Failed to add file_path column to analysis_results",
+          err,
+        );
       }
     }
   }
@@ -463,7 +509,7 @@ class DatabaseService {
     featureId: number,
     requirementId: string,
     description: string,
-    type: 'functional' | 'non_functional' | 'constraint',
+    type: "functional" | "non_functional" | "constraint",
     options?: {
       priority?: string;
       linkedTasks?: string[];
@@ -471,7 +517,10 @@ class DatabaseService {
     },
   ): { id: number } {
     const now = Date.now();
-    const existing = this.getRequirementByRequirementId(featureId, requirementId);
+    const existing = this.getRequirementByRequirementId(
+      featureId,
+      requirementId,
+    );
 
     if (existing) {
       const stmt = this.db!.prepare(`
@@ -484,8 +533,12 @@ class DatabaseService {
         description,
         type,
         options?.priority ?? existing.priority,
-        options?.linkedTasks ? JSON.stringify(options.linkedTasks) : existing.linked_tasks,
-        options?.acceptanceCriteria ? JSON.stringify(options.acceptanceCriteria) : existing.acceptance_criteria,
+        options?.linkedTasks
+          ? JSON.stringify(options.linkedTasks)
+          : existing.linked_tasks,
+        options?.acceptanceCriteria
+          ? JSON.stringify(options.acceptanceCriteria)
+          : existing.acceptance_criteria,
         now,
         existing.id,
       );
@@ -506,7 +559,9 @@ class DatabaseService {
       type,
       options?.priority ?? null,
       options?.linkedTasks ? JSON.stringify(options.linkedTasks) : null,
-      options?.acceptanceCriteria ? JSON.stringify(options.acceptanceCriteria) : null,
+      options?.acceptanceCriteria
+        ? JSON.stringify(options.acceptanceCriteria)
+        : null,
       now,
       now,
     );
@@ -573,7 +628,9 @@ class DatabaseService {
   }
 
   deleteRequirementsByFeature(featureId: number): void {
-    this.db!.prepare("DELETE FROM requirements WHERE feature_id = ?").run(featureId);
+    this.db!.prepare("DELETE FROM requirements WHERE feature_id = ?").run(
+      featureId,
+    );
   }
 
   // ========================================
@@ -663,7 +720,9 @@ class DatabaseService {
   }
 
   deleteResearchDecisionsByFeature(featureId: number): void {
-    this.db!.prepare("DELETE FROM research_decisions WHERE feature_id = ?").run(featureId);
+    this.db!.prepare("DELETE FROM research_decisions WHERE feature_id = ?").run(
+      featureId,
+    );
   }
 
   // ========================================
@@ -675,7 +734,9 @@ class DatabaseService {
     options?: {
       summary?: string;
       techStack?: Record<string, string>;
-      phases?: Array<{ name: string; goal: string; order: number; tasks: string[] }>;
+      phases?: Array<
+        { name: string; goal: string; order: number; tasks: string[] }
+      >;
       dependencies?: string[];
       risks?: Array<{ risk: string; mitigation: string }>;
     },
@@ -691,9 +752,13 @@ class DatabaseService {
       `);
       stmt.run(
         options?.summary ?? existing.summary,
-        options?.techStack ? JSON.stringify(options.techStack) : existing.tech_stack,
+        options?.techStack
+          ? JSON.stringify(options.techStack)
+          : existing.tech_stack,
         options?.phases ? JSON.stringify(options.phases) : existing.phases,
-        options?.dependencies ? JSON.stringify(options.dependencies) : existing.dependencies,
+        options?.dependencies
+          ? JSON.stringify(options.dependencies)
+          : existing.dependencies,
         options?.risks ? JSON.stringify(options.risks) : existing.risks,
         now,
         existing.id,
@@ -843,12 +908,13 @@ class DatabaseService {
     content: string,
     duration: number,
     tokenCount?: number,
+    filePath?: string,
   ): { id: number; requestId: string } {
     const stmt = this.db!.prepare(`
       INSERT INTO analysis_results (
-        request_id, feature_id, analysis_type, content, token_count, duration, created_at
+        request_id, feature_id, analysis_type, content, token_count, duration, file_path, created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       requestId,
@@ -857,6 +923,7 @@ class DatabaseService {
       content,
       tokenCount ?? null,
       duration,
+      filePath ?? null,
       Date.now(),
     );
     return { id: result.lastInsertRowid as number, requestId };
@@ -940,7 +1007,45 @@ class DatabaseService {
       token_count: number | null;
       duration: number;
       created_at: number;
+      file_path: string | null;
     }>;
+  }
+
+  /**
+   * Get the latest analysis result for a specific feature, type, and optional file
+   */
+  getLatestAnalysisResult(
+    featureId: number,
+    analysisType: "summary" | "consistency" | "gaps",
+    filePath?: string,
+  ): {
+    id: number;
+    request_id: string;
+    feature_id: number;
+    analysis_type: string;
+    content: string;
+    token_count: number | null;
+    duration: number;
+    created_at: number;
+    file_path: string | null;
+  } | null {
+    if (filePath) {
+      const stmt = this.db!.prepare(`
+        SELECT * FROM analysis_results 
+        WHERE feature_id = ? AND analysis_type = ? AND file_path = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
+      return stmt.get(featureId, analysisType, filePath) as any;
+    }
+
+    const stmt = this.db!.prepare(`
+      SELECT * FROM analysis_results 
+      WHERE feature_id = ? AND analysis_type = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    return stmt.get(featureId, analysisType) as any;
   }
 
   /**

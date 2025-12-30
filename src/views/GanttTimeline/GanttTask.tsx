@@ -23,8 +23,10 @@ const statusTextColors = {
 };
 
 export function GanttTask({ task }: GanttTaskProps) {
+  const hasDependencies = task.dependencies && task.dependencies.length > 0;
+
   return (
-    <div className="flex items-stretch gap-3 group">
+    <div className="flex items-stretch gap-3 group" data-task-id={task.taskId}>
       {/* Task ID */}
       <div className="w-16 flex-shrink-0 flex items-center">
         <span className="text-xs font-mono text-gray-400 dark:text-gray-500">
@@ -45,6 +47,15 @@ export function GanttTask({ task }: GanttTaskProps) {
               <Chip size="sm" variant="flat" color="secondary">
                 P
               </Chip>
+            )}
+            {hasDependencies && (
+              <div title={`Depends on: ${task.dependencies.join(', ')}`}>
+                <Chip size="sm" variant="flat" color="warning">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </Chip>
+              </div>
             )}
           </div>
 

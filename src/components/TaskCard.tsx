@@ -34,7 +34,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </div>
 
           {/* Description */}
-          <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug">
+          <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug break-words">
             {task.description}
           </p>
 
@@ -59,7 +59,7 @@ export function TaskCard({ task }: TaskCardProps) {
 
           {/* File Path */}
           {task.filePath && (
-            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 truncate pt-1 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 break-words pt-1 border-t border-gray-100 dark:border-gray-700">
               {task.filePath}
             </p>
           )}

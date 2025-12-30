@@ -70,6 +70,7 @@ interface UseAIAnalysisReturn {
   generateSummary: (
     featureId: number,
     filePath: string,
+    force?: boolean,
   ) => Promise<SummaryResult | null>;
   checkConsistency: (
     featureId: number,
@@ -100,8 +101,9 @@ export function useAIAnalysis(): UseAIAnalysisReturn {
     async (
       featureId: number,
       filePath: string,
+      force: boolean = false,
     ): Promise<SummaryResult | null> => {
-      if (!isConfigured) {
+      if (!isConfigured && force) { // Only require configuration if generating fresh
         setError(
           "AI provider not configured. Please configure OpenAI or Ollama in settings.",
         );
@@ -115,6 +117,7 @@ export function useAIAnalysis(): UseAIAnalysisReturn {
         const response = await window.electronAPI.generateSummary(
           featureId,
           filePath,
+          force,
         );
 
         if (response.success && response.data) {

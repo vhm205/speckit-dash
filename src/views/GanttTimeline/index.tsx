@@ -1,14 +1,15 @@
 /**
  * Speckit Dashboard - Gantt Timeline View
- * Visualize task phases as a timeline
+ * Visualize task phases as a timeline with plan data and dependencies
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardBody, Button, Chip, Progress } from '../../components/ui';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import GanttTask from './GanttTask';
-import type { Feature, Task } from '../../types';
+import DependencyArrow, { DependencyArrowDefs } from './DependencyArrow';
+import type { Feature, Task, Plan } from '../../types';
 
 interface PhaseData {
   name: string;
@@ -22,8 +23,11 @@ export function GanttTimeline() {
   const navigate = useNavigate();
   const [feature, setFeature] = useState<Feature | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [scale, setScale] = useState(1);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadFeatureData() {
@@ -41,6 +45,7 @@ export function GanttTimeline() {
         if (response.success && response.data) {
           setFeature(response.data.feature);
           setTasks(response.data.tasks);
+          setPlan(response.data.plan);
         } else if (!response.success) {
           setError(response.error);
         }
@@ -54,7 +59,20 @@ export function GanttTimeline() {
     loadFeatureData();
   }, [featureId]);
 
-  // Group tasks by phase with progress calculation
+  // Collect all task dependencies for rendering
+  const dependencies = useMemo(() => {
+    const deps: Array<{ from: string; to: string }> = [];
+    tasks.forEach((task) => {
+      if (task.dependencies && task.dependencies.length > 0) {
+        task.dependencies.forEach((depId) => {
+          deps.push({ from: depId, to: task.taskId });
+        });
+      }
+    });
+    return deps;
+  }, [tasks]);
+
+  // Merge plan phases with task data for enhanced visualization
   const phases = useMemo((): PhaseData[] => {
     const phaseMap = new Map<string, PhaseData>();
 
@@ -79,8 +97,23 @@ export function GanttTimeline() {
       phase.progress = (done / phase.tasks.length) * 100;
     });
 
-    return Array.from(phaseMap.values()).sort((a, b) => a.order - b.order);
-  }, [tasks]);
+    // Merge with plan phase goals if available
+    const result = Array.from(phaseMap.values()).sort((a, b) => a.order - b.order);
+
+    if (plan && plan.phases) {
+      result.forEach((phase) => {
+        const planPhase = plan.phases.find(p =>
+          p.name.toLowerCase().includes(phase.name.toLowerCase()) ||
+          phase.name.toLowerCase().includes(p.name.toLowerCase())
+        );
+        if (planPhase && planPhase.goal) {
+          phase.name = planPhase.name;
+        }
+      });
+    }
+
+    return result;
+  }, [tasks, plan]);
 
   if (isLoading) {
     return (
@@ -103,8 +136,13 @@ export function GanttTimeline() {
     );
   }
 
+  // Zoom controls
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
+  const handleResetZoom = () => setScale(1);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={timelineRef} data-gantt-timeline>
       {/* Page Header */}
       <div className="flex items-center gap-4">
         <Button
@@ -126,12 +164,65 @@ export function GanttTimeline() {
             {feature.title || feature.featureName} - Timeline
           </h1>
         </div>
-        <Button
-          variant="flat"
-          onPress={() => navigate(`/features/${featureId}/kanban`)}
-        >
-          View Kanban
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
+            <Button
+              isIconOnly
+              size="sm"
+              variant="flat"
+              onPress={handleZoomOut}
+              aria-label="Zoom out"
+              isDisabled={scale <= 0.5}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </Button>
+            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 w-12 text-center">
+              {Math.round(scale * 100)}%
+            </span>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="flat"
+              onPress={handleZoomIn}
+              aria-label="Zoom in"
+              isDisabled={scale >= 2}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </Button>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="flat"
+              onPress={handleResetZoom}
+              aria-label="Reset zoom"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </Button>
+          </div>
+
+          <Button
+            variant="flat"
+            size="sm"
+            onPress={() => navigate(`/features/${featureId}/summary`)}
+          >
+            View Summary
+          </Button>
+
+          <Button
+            variant="flat"
+            size="sm"
+            onPress={() => navigate(`/features/${featureId}/kanban`)}
+          >
+            View Kanban
+          </Button>
+        </div>
       </div>
 
       {/* Timeline Legend */}
@@ -150,6 +241,17 @@ export function GanttTimeline() {
         </div>
       </div>
 
+      {/* Plan Summary */}
+      {plan && plan.summary && (
+        <Card className="bg-blue-50 dark:bg-blue-900/20">
+          <CardBody className="py-3">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <span className="font-semibold">Plan Summary:</span> {plan.summary}
+            </p>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Timeline */}
       {phases.length === 0 ? (
         <Card>
@@ -158,7 +260,7 @@ export function GanttTimeline() {
           </CardBody>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="relative space-y-4" style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}>
           {phases.map((phase, index) => (
             <Card key={phase.name} className="overflow-hidden">
               <CardBody className="p-0">
@@ -189,7 +291,7 @@ export function GanttTimeline() {
                 </div>
 
                 {/* Task bars */}
-                <div className="p-4 space-y-2">
+                <div className="p-4 space-y-2 relative">
                   {phase.tasks.map((task) => (
                     <GanttTask key={task.id} task={task} />
                   ))}
@@ -197,6 +299,23 @@ export function GanttTimeline() {
               </CardBody>
             </Card>
           ))}
+
+          {/* SVG Overlay for Dependencies */}
+          {dependencies.length > 0 && (
+            <svg
+              className="absolute top-0 left-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 10 }}
+            >
+              <DependencyArrowDefs />
+              {dependencies.map((dep, idx) => (
+                <DependencyArrow
+                  key={`${dep.from}-${dep.to}-${idx}`}
+                  fromTaskId={dep.from}
+                  toTaskId={dep.to}
+                />
+              ))}
+            </svg>
+          )}
         </div>
       )}
     </div>

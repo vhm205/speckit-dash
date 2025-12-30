@@ -38,7 +38,9 @@ function extractText(node: MarkdownNode): string {
 /**
  * Parse a research.md file and extract structured data
  */
-export async function parseResearchFile(filePath: string): Promise<ParsedResearch> {
+export async function parseResearchFile(
+    filePath: string,
+): Promise<ParsedResearch> {
     const content = fs.readFileSync(filePath, "utf-8");
     return await parseResearchContent(content);
 }
@@ -46,11 +48,17 @@ export async function parseResearchFile(filePath: string): Promise<ParsedResearc
 /**
  * Parse research.md content string
  */
-export async function parseResearchContent(content: string): Promise<ParsedResearch> {
-    const { unified } = await import("unified");
-    const { default: remarkParse } = await import("remark-parse");
-    const { default: remarkGfm } = await import("remark-gfm");
-    const { default: remarkFrontmatter } = await import("remark-frontmatter");
+export async function parseResearchContent(
+    content: string,
+): Promise<ParsedResearch> {
+    // Use Function constructor to prevent TypeScript from converting to require()
+    const dynamicImport = new Function("specifier", "return import(specifier)");
+    const { unified } = await dynamicImport("unified");
+    const { default: remarkParse } = await dynamicImport("remark-parse");
+    const { default: remarkGfm } = await dynamicImport("remark-gfm");
+    const { default: remarkFrontmatter } = await dynamicImport(
+        "remark-frontmatter",
+    );
 
     const tree = unified()
         .use(remarkParse)
@@ -76,7 +84,10 @@ export async function parseResearchContent(content: string): Promise<ParsedResea
         if (node.type === "heading" && node.depth === 2) {
             const headingText = extractText(node).toLowerCase();
 
-            if (headingText.includes("phase") || headingText.includes("research")) {
+            if (
+                headingText.includes("phase") ||
+                headingText.includes("research")
+            ) {
                 currentSection = "decisions";
             } else {
                 currentSection = "";
@@ -85,7 +96,10 @@ export async function parseResearchContent(content: string): Promise<ParsedResea
         }
 
         // Track decision headings (H3) - each decision is a subsection
-        if (node.type === "heading" && node.depth === 3 && currentSection === "decisions") {
+        if (
+            node.type === "heading" && node.depth === 3 &&
+            currentSection === "decisions"
+        ) {
             // Save previous decision if exists
             if (currentDecision) {
                 result.decisions.push(currentDecision);
@@ -105,13 +119,19 @@ export async function parseResearchContent(content: string): Promise<ParsedResea
         }
 
         // Track subsection headings (H4+) within a decision
-        if (node.type === "heading" && node.depth && node.depth >= 4 && currentDecision) {
+        if (
+            node.type === "heading" && node.depth && node.depth >= 4 &&
+            currentDecision
+        ) {
             const headingText = extractText(node).toLowerCase();
 
             // Flush paragraph buffer to appropriate field
             if (paragraphBuffer.length > 0 && currentSubsection) {
                 const content = paragraphBuffer.join("\n\n");
-                if (currentSubsection === "decision" && !currentDecision.decision) {
+                if (
+                    currentSubsection === "decision" &&
+                    !currentDecision.decision
+                ) {
                     currentDecision.decision = content;
                 } else if (currentSubsection === "rationale") {
                     currentDecision.rationale = content;
@@ -123,13 +143,21 @@ export async function parseResearchContent(content: string): Promise<ParsedResea
 
             if (headingText.includes("decision")) {
                 currentSubsection = "decision";
-            } else if (headingText.includes("rationale") || headingText.includes("why")) {
+            } else if (
+                headingText.includes("rationale") || headingText.includes("why")
+            ) {
                 currentSubsection = "rationale";
             } else if (headingText.includes("alternative")) {
                 currentSubsection = "alternatives";
-            } else if (headingText.includes("implementation") || headingText.includes("approach")) {
+            } else if (
+                headingText.includes("implementation") ||
+                headingText.includes("approach")
+            ) {
                 currentSubsection = "context";
-            } else if (headingText.includes("context") || headingText.includes("background")) {
+            } else if (
+                headingText.includes("context") ||
+                headingText.includes("background")
+            ) {
                 currentSubsection = "context";
             } else {
                 currentSubsection = "";
@@ -143,10 +171,14 @@ export async function parseResearchContent(content: string): Promise<ParsedResea
 
             // Look for "Decision:" prefix
             if (text.match(/^\*\*Decision\*\*:/i)) {
-                const decision = text.replace(/^\*\*Decision\*\*:\s*/i, "").trim();
+                const decision = text.replace(/^\*\*Decision\*\*:\s*/i, "")
+                    .trim();
                 currentDecision.decision = decision;
                 currentSubsection = "";
-            } else if (paragraphBuffer.length === 0 && !currentDecision.decision && currentSubsection === "") {
+            } else if (
+                paragraphBuffer.length === 0 && !currentDecision.decision &&
+                currentSubsection === ""
+            ) {
                 // First paragraph after title, treat as decision if not already set
                 paragraphBuffer.push(text);
             } else if (currentSubsection) {
@@ -156,25 +188,34 @@ export async function parseResearchContent(content: string): Promise<ParsedResea
 
         // Parse lists for alternatives or other content
         if (node.type === "list" && currentDecision) {
-            const items = (node.children || []).map((item) => extractText(item).trim());
+            const items = (node.children || []).map((item) =>
+                extractText(item).trim()
+            );
 
             if (currentSubsection === "alternatives") {
                 // Parse alternatives - usually in format "**Name**: description"
                 for (const item of items) {
                     const match = item.match(/^\*\*([^*]+)\*\*:\s*(.*)/);
                     if (match) {
-                        currentDecision.alternatives.push(`${match[1]}: ${match[2]}`);
+                        currentDecision.alternatives.push(
+                            `${match[1]}: ${match[2]}`,
+                        );
                     } else {
                         currentDecision.alternatives.push(item);
                     }
                 }
             } else if (currentSubsection) {
-                paragraphBuffer.push(items.map(item => `- ${item}`).join("\n"));
+                paragraphBuffer.push(
+                    items.map((item) => `- ${item}`).join("\n"),
+                );
             }
         }
 
         // Parse code blocks for context
-        if (node.type === "code" && currentDecision && currentSubsection === "context") {
+        if (
+            node.type === "code" && currentDecision &&
+            currentSubsection === "context"
+        ) {
             const codeContent = extractText(node);
             paragraphBuffer.push(`\`\`\`\n${codeContent}\n\`\`\``);
         }

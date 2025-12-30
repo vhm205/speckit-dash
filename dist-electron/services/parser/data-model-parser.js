@@ -3,39 +3,6 @@
  * Speckit Dashboard - Data Model Parser
  * Parse data-model.md files to extract entities and relationships
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -77,10 +44,12 @@ async function parseDataModelFile(filePath) {
  * Parse data-model.md content string
  */
 async function parseDataModelContent(content) {
-    const { unified } = await Promise.resolve().then(() => __importStar(require("unified")));
-    const { default: remarkParse } = await Promise.resolve().then(() => __importStar(require("remark-parse")));
-    const { default: remarkGfm } = await Promise.resolve().then(() => __importStar(require("remark-gfm")));
-    const { default: remarkFrontmatter } = await Promise.resolve().then(() => __importStar(require("remark-frontmatter")));
+    // Use Function constructor to prevent TypeScript from converting to require()
+    const dynamicImport = new Function("specifier", "return import(specifier)");
+    const { unified } = await dynamicImport("unified");
+    const { default: remarkParse } = await dynamicImport("remark-parse");
+    const { default: remarkGfm } = await dynamicImport("remark-gfm");
+    const { default: remarkFrontmatter } = await dynamicImport("remark-frontmatter");
     const tree = unified()
         .use(remarkParse)
         .use(remarkGfm)
@@ -96,33 +65,40 @@ async function parseDataModelContent(content) {
     const children = tree.children;
     for (let i = 0; i < children.length; i++) {
         const node = children[i];
-        // Track main section headings (## Entity Name)
+        // Track section headings (## Section Name) - these are categories, not entities
         if (node.type === "heading" && node.depth === 2) {
             const text = extractText(node);
             if (text.toLowerCase().includes("overview") ||
                 text.toLowerCase().includes("summary")) {
                 currentSection = "overview";
-                currentEntity = null;
             }
             else if (text.toLowerCase().includes("relationship")) {
                 currentSection = "relationships";
             }
             else {
-                // Assume it's an entity name
-                currentSection = "entity";
-                currentEntity = {
-                    name: text.trim(),
-                    description: null,
-                    attributes: [],
-                    relationships: [],
-                };
-                result.entities.push(currentEntity);
+                // It's just a category section (like "Core Entities")
+                currentSection = text.toLowerCase();
             }
+            currentEntity = null;
             currentSubSection = "";
             continue;
         }
-        // Track subsections (### Attributes, ### Relationships)
+        // Track entity headings (### Entity Name) - these ARE the entities
         if (node.type === "heading" && node.depth === 3) {
+            const text = extractText(node);
+            // Create new entity
+            currentEntity = {
+                name: text.trim(),
+                description: null,
+                attributes: [],
+                relationships: [],
+            };
+            result.entities.push(currentEntity);
+            currentSubSection = "";
+            continue;
+        }
+        // Track subsections (#### Attributes, #### Relationships) or bold headers
+        if (node.type === "heading" && node.depth === 4) {
             const text = extractText(node).toLowerCase();
             if (text.includes("attribute") || text.includes("field") ||
                 text.includes("column")) {
@@ -142,8 +118,33 @@ async function parseDataModelContent(content) {
             result.overview = extractText(node);
             continue;
         }
-        // Parse entity description
-        if (node.type === "paragraph" && currentEntity && !currentEntity.description) {
+        // Check for bold subsection markers (e.g., **Attributes**:, **Relationships**:)
+        if (node.type === "paragraph" && currentEntity) {
+            const text = extractText(node).trim();
+            const lowerText = text.toLowerCase();
+            // Check if this is a section marker
+            if (lowerText.startsWith("**") ||
+                /^\*\*[^*]+\*\*:?\s*$/.test(text)) {
+                if (lowerText.includes("attribute") || lowerText.includes("field")) {
+                    currentSubSection = "attributes";
+                    continue;
+                }
+                else if (lowerText.includes("relationship") ||
+                    lowerText.includes("association")) {
+                    currentSubSection = "relationships";
+                    continue;
+                }
+                else if (lowerText.includes("lifecycle") || lowerText.includes("validation")) {
+                    currentSubSection = lowerText.replace(/\*\*/g, "").replace(":", "")
+                        .trim();
+                    continue;
+                }
+            }
+        }
+        // Parse entity description (only if no subsection is active)
+        if (node.type === "paragraph" && currentEntity &&
+            !currentEntity.description &&
+            !currentSubSection) {
             currentEntity.description = extractText(node);
             continue;
         }
@@ -152,14 +153,33 @@ async function parseDataModelContent(content) {
             const items = (node.children || []).map((item) => extractText(item).trim());
             if (currentSubSection === "attributes") {
                 items.forEach((item) => {
-                    // Parse patterns like "name (type): constraint" or "name: type"
-                    const match = item.match(/^([^(:]+)\s*(?:\(([^)]+)\))?[:\s]*(.*)$/);
+                    // Handle format: `name` (TYPE, CONSTRAINTS...): Description
+                    // or: name (TYPE, CONSTRAINTS...): Description
+                    const match = item.match(/^`?([^`(]+)`?\s*\(([^)]+)\)\s*:\s*(.*)$/);
                     if (match) {
+                        const name = match[1].trim();
+                        const typeInfo = match[2].trim();
+                        const description = match[3].trim();
+                        // Split type information by comma to separate type from constraints
+                        const typeParts = typeInfo.split(",").map((p) => p.trim());
+                        const type = typeParts[0]; // First part is the data type
+                        const constraints = typeParts.slice(1).join(", ") || null;
                         currentEntity.attributes.push({
-                            name: match[1].trim(),
-                            type: match[2]?.trim() || "string",
-                            constraints: match[3]?.trim() || null,
+                            name,
+                            type,
+                            constraints: constraints || description || null,
                         });
+                    }
+                    else {
+                        // Fallback: try simpler patterns
+                        const simpleMatch = item.match(/^`?([^`:]+)`?:?\s*(.+)$/);
+                        if (simpleMatch) {
+                            currentEntity.attributes.push({
+                                name: simpleMatch[1].trim(),
+                                type: simpleMatch[2].trim(),
+                                constraints: null,
+                            });
+                        }
                     }
                 });
             }

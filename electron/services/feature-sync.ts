@@ -50,7 +50,13 @@ export async function syncProjectFeatures(
         status: "draft",
         createdDate: null as string | null,
       };
-      let requirements: Array<{ id: string; description: string; type: 'functional' | 'non_functional' | 'constraint' }> = [];
+      let requirements: Array<
+        {
+          id: string;
+          description: string;
+          type: "functional" | "non_functional" | "constraint";
+        }
+      > = [];
 
       if (fs.existsSync(specPath)) {
         const content = fs.readFileSync(specPath, "utf-8");
@@ -64,10 +70,12 @@ export async function syncProjectFeatures(
           };
 
           // Extract requirements
-          requirements = parsed.requirements.map(req => ({
+          requirements = parsed.requirements.map((req) => ({
             id: req.id,
             description: req.description,
-            type: req.id.startsWith('NFR') ? 'non_functional' as const : 'functional' as const,
+            type: req.id.startsWith("NFR")
+              ? "non_functional" as const
+              : "functional" as const,
           }));
         } catch (error) {
           console.error("Error parsing spec.md:", error);
@@ -89,7 +97,6 @@ export async function syncProjectFeatures(
 
       // Parse and sync tasks.md if exists
       const tasksPath = path.join(featurePath, "tasks.md");
-      console.log({ tasksPath, isExists: fs.existsSync(tasksPath) });
       if (fs.existsSync(tasksPath)) {
         const content = fs.readFileSync(tasksPath, "utf-8");
         const parsed = parseTasksContent(content);

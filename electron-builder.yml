@@ -20,14 +20,12 @@ mac:
       arch:
         - x64
         - arm64
-  icon: build/icons/icon.icns
 
 win:
   target:
     - target: nsis
       arch:
         - x64
-  icon: build/icons/icon.ico
 
 linux:
   target:
@@ -35,7 +33,6 @@ linux:
       arch:
         - x64
   category: Development
-  icon: build/icons
 
 nsis:
   oneClick: false

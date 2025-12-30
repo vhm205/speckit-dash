@@ -55,10 +55,12 @@ async function syncProjectFeatures(projectId, projectPath) {
                         createdDate: parsed.createdDate,
                     };
                     // Extract requirements
-                    requirements = parsed.requirements.map(req => ({
+                    requirements = parsed.requirements.map((req) => ({
                         id: req.id,
                         description: req.description,
-                        type: req.id.startsWith('NFR') ? 'non_functional' : 'functional',
+                        type: req.id.startsWith("NFR")
+                            ? "non_functional"
+                            : "functional",
                     }));
                 }
                 catch (error) {
@@ -73,7 +75,6 @@ async function syncProjectFeatures(projectId, projectPath) {
             });
             // Parse and sync tasks.md if exists
             const tasksPath = path_1.default.join(featurePath, "tasks.md");
-            console.log({ tasksPath, isExists: fs_1.default.existsSync(tasksPath) });
             if (fs_1.default.existsSync(tasksPath)) {
                 const content = fs_1.default.readFileSync(tasksPath, "utf-8");
                 const parsed = (0, tasks_parser_1.parseTasksContent)(content);

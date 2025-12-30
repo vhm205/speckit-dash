@@ -10,6 +10,7 @@ import StatsOverview from './views/StatsOverview';
 import FeatureList from './views/FeatureList';
 import KanbanBoard from './views/KanbanBoard';
 import GanttTimeline from './views/GanttTimeline';
+import FeatureSummaryView from './views/FeatureSummaryView';
 import ArchitectureView from './views/ArchitectureView';
 import AIAnalysis from './views/AIAnalysis';
 import SchemaView from './views/SchemaView';
@@ -36,48 +37,53 @@ function App() {
 
   return (
     <AIProviderProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Navigation */}
-        <Navbar />
+      <div className="min-h-screen relative bg-gray-50 dark:bg-gray-900">
+        <div className="relative z-10 flex flex-col min-h-screen">
+          {/* Navigation */}
+          <Navbar />
 
-        {/* Main Content */}
-        <main className="pt-16 px-6 pb-8">
-          <div className="max-w-7xl mx-auto">
-            <ErrorBoundary>
-              <Routes>
-                {/* Stats Overview - Default route */}
-                <Route path="/" element={<StatsOverview />} />
+          {/* Main Content */}
+          <main className="flex-1 pt-16 px-6 pb-8 overflow-x-hidden">
+            <div className="max-w-7xl mx-auto">
+              <ErrorBoundary>
+                <Routes>
+                  {/* Stats Overview - Default route */}
+                  <Route path="/" element={<StatsOverview />} />
 
-                {/* Feature List */}
-                <Route path="/features" element={<FeatureList />} />
+                  {/* Feature List */}
+                  <Route path="/features" element={<FeatureList />} />
 
-                {/* Kanban Board for a specific feature */}
-                <Route path="/features/:featureId/kanban" element={<KanbanBoard />} />
+                  {/* Kanban Board for a specific feature */}
+                  <Route path="/features/:featureId/kanban" element={<KanbanBoard />} />
 
-                {/* Gantt Timeline for a specific feature */}
-                <Route path="/features/:featureId/gantt" element={<GanttTimeline />} />
+                  {/* Gantt Timeline for a specific feature */}
+                  <Route path="/features/:featureId/gantt" element={<GanttTimeline />} />
 
-                {/* Architecture View for a specific feature */}
-                <Route path="/features/:featureId/architecture" element={<ArchitectureView />} />
+                  {/* Summary View for a specific feature */}
+                  <Route path="/features/:featureId/summary" element={<FeatureSummaryView />} />
 
-                {/* AI Analysis for a specific feature */}
-                <Route path="/features/:featureId/ai-analysis" element={<AIAnalysis />} />
+                  {/* Architecture View for a specific feature */}
+                  <Route path="/features/:featureId/architecture" element={<ArchitectureView />} />
 
-                {/* Schema View for a specific feature */}
-                <Route path="/features/:featureId/schema" element={<SchemaView />} />
+                  {/* AI Analysis for a specific feature */}
+                  <Route path="/features/:featureId/ai-analysis" element={<AIAnalysis />} />
 
-                {/* Settings - AI Configuration */}
-                <Route path="/settings/ai" element={<AISettings />} />
+                  {/* Schema View for a specific feature */}
+                  <Route path="/features/:featureId/schema" element={<SchemaView />} />
 
-                {/* Fallback redirect */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </div>
-        </main>
+                  {/* Settings - AI Configuration */}
+                  <Route path="/settings/ai" element={<AISettings />} />
 
-        {/* Project Configuration Modal */}
-        <ProjectConfigModal isOpen={showConfigModal} onClose={() => { }} isRequired />
+                  {/* Fallback redirect */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </ErrorBoundary>
+            </div>
+          </main>
+
+          {/* Project Configuration Modal */}
+          <ProjectConfigModal isOpen={showConfigModal} onClose={() => { }} isRequired />
+        </div>
       </div>
     </AIProviderProvider>
   );

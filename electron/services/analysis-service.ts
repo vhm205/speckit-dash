@@ -11,8 +11,10 @@ import fs from "fs";
 import path from "path";
 
 // Dynamic import for uuid (ES module in CommonJS context)
+// Using Function constructor to prevent TypeScript from converting to require()
 async function generateUUID(): Promise<string> {
-  const { v4 } = await import("uuid");
+  const importFn = new Function("specifier", "return import(specifier)");
+  const { v4 } = await importFn("uuid");
   return v4();
 }
 
@@ -205,21 +207,46 @@ class AnalysisService {
   // ========================================
 
   /**
-   * Generate a summary of a specification document
+  /**
+   * Generate or retrieve a summary of a specification document
    */
   async generateSummary(
     featureId: number,
     filePath: string,
+    force: boolean = false,
   ): Promise<SummaryResult> {
     const cacheKey = `feature:${featureId}:summary:${filePath}`;
-    const cached = this.cache.get<SummaryResult>(cacheKey);
-    if (cached) return cached;
+
+    // 1. Check in-memory cache if not forced
+    if (!force) {
+      const cached = this.cache.get<SummaryResult>(cacheKey);
+      if (cached) return cached;
+
+      // 2. Check database
+      const latest = databaseService.getLatestAnalysisResult(
+        featureId,
+        "summary",
+        filePath,
+      );
+      if (latest) {
+        try {
+          const result = JSON.parse(latest.content) as SummaryResult;
+          // Refresh cache
+          this.cache.set(cacheKey, result);
+          return result;
+        } catch (err) {
+          console.error("Failed to parse cached summary from DB", err);
+          // Proceed to generation if DB content is corrupt
+        }
+      }
+    }
 
     const startTime = Date.now();
     const requestId = await generateUUID();
 
     // Read file content
     const content = this.readFile(filePath);
+
     if (!content) {
       throw new Error(`File not found: ${filePath}`);
     }
@@ -238,7 +265,8 @@ class AnalysisService {
     let parsed: { summary: string; keyPoints: string[]; wordCount: number };
     try {
       parsed = JSON.parse(this.extractJSON(text));
-    } catch {
+    } catch (error) {
+      console.error("JSON parsing of AI response failed", error);
       // Fallback if JSON parsing fails
       parsed = {
         summary: text,
@@ -267,6 +295,7 @@ class AnalysisService {
       JSON.stringify(result),
       duration,
       tokenCount,
+      filePath,
     );
 
     // Cache result
@@ -286,8 +315,9 @@ class AnalysisService {
     featureId: number,
     files: string[],
   ): Promise<ConsistencyResult> {
-    const cacheKey = `feature:${featureId}:consistency:${files.sort().join(",")
-      }`;
+    const cacheKey = `feature:${featureId}:consistency:${
+      files.sort().join(",")
+    }`;
     const cached = this.cache.get<ConsistencyResult>(cacheKey);
     if (cached) return cached;
 

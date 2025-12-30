@@ -107,8 +107,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // AI Analysis Methods
   // ========================================
 
-  generateSummary: (featureId: number, filePath: string) =>
-    ipcRenderer.invoke("ai-analysis:generate-summary", { featureId, filePath }),
+  generateSummary: (featureId: number, filePath: string, force?: boolean) =>
+    ipcRenderer.invoke("ai-analysis:generate-summary", {
+      featureId,
+      filePath,
+      force,
+    }),
 
   checkConsistency: (featureId: number, files: string[]) =>
     ipcRenderer.invoke("ai-analysis:check-consistency", { featureId, files }),
@@ -146,6 +150,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   readSpecFile: (
     featureId: number,
-    fileType: "spec" | "plan" | "tasks" | "data-model",
+    fileType: "spec" | "plan" | "tasks" | "data-model" | "requirements",
   ) => ipcRenderer.invoke("files:read-spec", { featureId, fileType }),
 });

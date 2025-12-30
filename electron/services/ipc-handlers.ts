@@ -22,10 +22,10 @@ function normalizePath(inputPath: string): string {
   let normalized = inputPath.trim();
 
   // Convert backslashes to forward slashes for consistency
-  normalized = normalized.replace(/\\/g, '/');
+  normalized = normalized.replace(/\\/g, "/");
 
   // Remove trailing slashes
-  normalized = normalized.replace(/\/+$/, '');
+  normalized = normalized.replace(/\/+$/, "");
 
   // On Windows in Node.js, path.normalize will handle drive letters properly
   // On Unix/WSL, it will keep the path as-is
@@ -48,7 +48,8 @@ function validateProjectPath(
   if (!fs.existsSync(normalizedPath)) {
     return {
       valid: false,
-      error: `Path does not exist: ${normalizedPath}\nPlease check the path and try again.`
+      error:
+        `Path does not exist: ${normalizedPath}\nPlease check the path and try again.`,
     };
   }
 
@@ -64,7 +65,9 @@ function validateProjectPath(
   } catch (err) {
     return {
       valid: false,
-      error: `Cannot access path: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      error: `Cannot access path: ${
+        err instanceof Error ? err.message : "Unknown error"
+      }`,
     };
   }
 
@@ -324,9 +327,13 @@ export function registerIPCHandlers(): void {
 
         const tasks = databaseService.getTasksByFeature(featureId);
         const entities = databaseService.getEntitiesByFeature(featureId);
-        const requirements = databaseService.getRequirementsByFeature(featureId);
+        const requirements = databaseService.getRequirementsByFeature(
+          featureId,
+        );
         const plan = databaseService.getPlanByFeature(featureId);
-        const researchDecisions = databaseService.getResearchDecisionsByFeature(featureId);
+        const researchDecisions = databaseService.getResearchDecisionsByFeature(
+          featureId,
+        );
 
         return {
           success: true,
@@ -384,20 +391,26 @@ export function registerIPCHandlers(): void {
               description: r.description,
               priority: r.priority,
               linkedTasks: r.linked_tasks ? JSON.parse(r.linked_tasks) : [],
-              acceptanceCriteria: r.acceptance_criteria ? JSON.parse(r.acceptance_criteria) : [],
+              acceptanceCriteria: r.acceptance_criteria
+                ? JSON.parse(r.acceptance_criteria)
+                : [],
               createdAt: r.created_at,
               updatedAt: r.updated_at,
             })),
-            plan: plan ? {
-              id: plan.id,
-              summary: plan.summary,
-              techStack: plan.tech_stack ? JSON.parse(plan.tech_stack) : {},
-              phases: plan.phases ? JSON.parse(plan.phases) : [],
-              dependencies: plan.dependencies ? JSON.parse(plan.dependencies) : [],
-              risks: plan.risks ? JSON.parse(plan.risks) : [],
-              createdAt: plan.created_at,
-              updatedAt: plan.updated_at,
-            } : null,
+            plan: plan
+              ? {
+                id: plan.id,
+                summary: plan.summary,
+                techStack: plan.tech_stack ? JSON.parse(plan.tech_stack) : {},
+                phases: plan.phases ? JSON.parse(plan.phases) : [],
+                dependencies: plan.dependencies
+                  ? JSON.parse(plan.dependencies)
+                  : [],
+                risks: plan.risks ? JSON.parse(plan.risks) : [],
+                createdAt: plan.created_at,
+                updatedAt: plan.updated_at,
+              }
+              : null,
             researchDecisions: researchDecisions.map((rd) => ({
               id: rd.id,
               title: rd.title,
@@ -633,12 +646,17 @@ export function registerIPCHandlers(): void {
     "ai-analysis:generate-summary",
     async (
       _event,
-      { featureId, filePath }: { featureId: number; filePath: string },
+      { featureId, filePath, force }: {
+        featureId: number;
+        filePath: string;
+        force?: boolean;
+      },
     ) => {
       try {
         const result = await analysisService.generateSummary(
           featureId,
           filePath,
+          force,
         );
         return {
           success: true,
@@ -905,7 +923,7 @@ export function registerIPCHandlers(): void {
       _event,
       { featureId, fileType }: {
         featureId: number;
-        fileType: "spec" | "plan" | "tasks" | "data-model";
+        fileType: "spec" | "plan" | "tasks" | "data-model" | "requirements";
       },
     ) => {
       try {
@@ -920,9 +938,16 @@ export function registerIPCHandlers(): void {
 
         // Construct file path based on spec_path
         const specDir = path.dirname(feature.spec_path);
-        const fileName = `${fileType === "data-model" ? "data-model" : fileType
-          }.md`;
-        const filePath = path.join(specDir, fileName);
+        const fileName = `${
+          fileType === "data-model"
+            ? "data-model"
+            : fileType === "requirements"
+            ? "requirements"
+            : fileType
+        }.md`;
+        const filePath = fileType === "requirements"
+          ? path.join(specDir, "checklists", "requirements.md")
+          : path.join(specDir, fileName);
 
         if (!fs.existsSync(filePath)) {
           return {

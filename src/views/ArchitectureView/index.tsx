@@ -1,6 +1,6 @@
 /**
  * Speckit Dashboard - Architecture View
- * Entity diagram visualization using ReactFlow
+ * Entity diagram visualization using ReactFlow with Dagre auto-layout
  */
 
 import { useEffect, useState } from 'react';
@@ -14,16 +14,23 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   Panel,
+  MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card, CardBody, Button, Chip } from '../../components/ui';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EntityNode from './EntityNode';
+import RelationshipEdge from './RelationshipEdge';
+import { getLayoutedElements } from './layout-utils';
 import type { Feature, Entity } from '../../types';
 
-// Custom node types
+// Custom node and edge types
 const nodeTypes = {
   entity: EntityNode,
+};
+
+const edgeTypes = {
+  relationship: RelationshipEdge,
 };
 
 export function ArchitectureView() {
@@ -66,34 +73,21 @@ export function ArchitectureView() {
     loadFeatureData();
   }, [featureId]);
 
-  // Convert entities to ReactFlow nodes and edges
+  // Convert entities to ReactFlow nodes and edges with Dagre auto-layout
   useEffect(() => {
     if (entities.length === 0) return;
 
-    const nodeWidth = 280;
-    const nodeHeight = 200;
-    const padding = 60;
-    const columns = Math.ceil(Math.sqrt(entities.length));
-
-    // Create nodes with grid layout
-    const newNodes: Node[] = entities.map((entity, index) => {
-      const col = index % columns;
-      const row = Math.floor(index / columns);
-
-      return {
-        id: String(entity.id),
-        type: 'entity',
-        position: {
-          x: col * (nodeWidth + padding) + padding,
-          y: row * (nodeHeight + padding) + padding,
-        },
-        data: {
-          label: entity.entityName,
-          attributes: entity.attributes || [],
-          relationships: entity.relationships || [],
-        },
-      };
-    });
+    // Create nodes (position will be calculated by Dagre)
+    const newNodes: Node[] = entities.map((entity) => ({
+      id: String(entity.id),
+      type: 'entity',
+      position: { x: 0, y: 0 }, // Temporary position, will be updated by layout
+      data: {
+        label: entity.entityName,
+        attributes: entity.attributes || [],
+        relationships: entity.relationships || [],
+      },
+    }));
 
     // Create edges from relationships
     const newEdges: Edge[] = [];
@@ -107,18 +101,24 @@ export function ArchitectureView() {
             id: `${entity.id}-${targetEntity.id}-${index}`,
             source: String(entity.id),
             target: String(targetEntity.id),
-            label: rel.type,
-            type: 'smoothstep',
-            animated: rel.type === '1:N' || rel.type === 'N:N',
+            type: 'relationship',
+            data: { relationshipType: rel.type as '1:1' | '1:N' | 'N:1' | 'N:N' },
+            markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
             style: { stroke: '#6366f1', strokeWidth: 2 },
-            labelStyle: { fill: '#6366f1', fontWeight: 600, fontSize: 10 },
           });
         }
       });
     });
 
-    setNodes(newNodes);
-    setEdges(newEdges);
+    // Apply Dagre auto-layout
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      newNodes,
+      newEdges,
+      { direction: 'TB', nodeWidth: 280, nodeHeight: 200 }
+    );
+
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
   }, [entities, setNodes, setEdges]);
 
   if (isLoading) {
@@ -165,6 +165,38 @@ export function ArchitectureView() {
             {feature.title || feature.featureName} - Architecture
           </h1>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/kanban`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span className="hidden sm:inline">View Tasks</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/gantt`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span className="hidden sm:inline">View Timeline</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/summary`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="hidden sm:inline">View Summary</span>
+          </Button>
+        </div>
         <Chip color="primary" variant="flat">
           {entities.length} Entities
         </Chip>
@@ -193,6 +225,7 @@ export function ArchitectureView() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             fitView
             attributionPosition="bottom-left"
           >

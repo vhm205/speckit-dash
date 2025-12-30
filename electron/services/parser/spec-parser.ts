@@ -57,10 +57,14 @@ export async function parseSpecFile(filePath: string): Promise<ParsedSpec> {
  * Parse spec.md content string
  */
 export async function parseSpecContent(content: string): Promise<ParsedSpec> {
-  const { unified } = await import("unified");
-  const { default: remarkParse } = await import("remark-parse");
-  const { default: remarkGfm } = await import("remark-gfm");
-  const { default: remarkFrontmatter } = await import("remark-frontmatter");
+  // Use Function constructor to prevent TypeScript from converting to require()
+  const dynamicImport = new Function("specifier", "return import(specifier)");
+  const { unified } = await dynamicImport("unified");
+  const { default: remarkParse } = await dynamicImport("remark-parse");
+  const { default: remarkGfm } = await dynamicImport("remark-gfm");
+  const { default: remarkFrontmatter } = await dynamicImport(
+    "remark-frontmatter",
+  );
 
   const tree = unified()
     .use(remarkParse)

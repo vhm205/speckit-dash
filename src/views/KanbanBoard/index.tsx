@@ -19,35 +19,7 @@ export function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadFeatureData() {
-      if (!featureId) {
-        setIsLoading(false);
-        setError('No feature ID provided');
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await window.electronAPI.getFeature(Number(featureId));
-        if (response.success && response.data) {
-          setFeature(response.data.feature);
-          setTasks(response.data.tasks);
-        } else if (!response.success) {
-          setError(response.error);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load feature');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadFeatureData();
-  }, [featureId]);
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
 
   // Group tasks by phase, then by status within each phase
   const tasksByPhase = useMemo(() => {
@@ -80,6 +52,59 @@ export function KanbanBoard() {
       return (aTask?.phaseOrder ?? 999) - (bTask?.phaseOrder ?? 999);
     });
   }, [tasks]);
+
+  useEffect(() => {
+    async function loadFeatureData() {
+      if (!featureId) {
+        setIsLoading(false);
+        setError('No feature ID provided');
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await window.electronAPI.getFeature(Number(featureId));
+        if (response.success && response.data) {
+          setFeature(response.data.feature);
+          setTasks(response.data.tasks);
+
+          // Default all phases to collapsed
+          const phaseNames = new Set(
+            response.data.tasks.map(t => t.phase || 'Unassigned')
+          );
+          setCollapsedPhases(phaseNames);
+        } else if (!response.success) {
+          setError(response.error);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load feature');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadFeatureData();
+  }, [featureId]);
+
+  const togglePhase = (phase: string) => {
+    setCollapsedPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(phase)) {
+        next.delete(phase);
+      } else {
+        next.add(phase);
+      }
+      return next;
+    });
+  };
+
+  const expandAll = () => setCollapsedPhases(new Set());
+  const collapseAll = () => {
+    const allPhases = tasksByPhase.map(([phase]) => phase);
+    setCollapsedPhases(new Set(allPhases));
+  };
 
   if (isLoading) {
     return (
@@ -120,25 +145,66 @@ export function KanbanBoard() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          isIconOnly
-          variant="flat"
-          size="sm"
-          onPress={() => navigate('/features')}
-          aria-label="Back to features"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Button>
-        <div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-            {feature.featureNumber}
-          </p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {feature.title || feature.featureName}
-          </h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            isIconOnly
+            variant="flat"
+            size="sm"
+            onPress={() => navigate('/features')}
+            aria-label="Back to features"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Button>
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+              {feature.featureNumber}
+            </p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {feature.title || feature.featureName}
+            </h1>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/summary`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="hidden sm:inline">View Summary</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/gantt`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span className="hidden sm:inline">View Timeline</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => navigate(`/features/${featureId}/architecture`)}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            <span className="hidden sm:inline">View Architecture</span>
+          </Button>
+          <Button size="sm" variant="flat" onPress={expandAll}>
+            Expand All
+          </Button>
+          <Button size="sm" variant="flat" onPress={collapseAll}>
+            Collapse All
+          </Button>
         </div>
       </div>
 
@@ -150,34 +216,45 @@ export function KanbanBoard() {
           </CardBody>
         </Card>
       ) : (
-        <div className="space-y-8">
-          {tasksByPhase.map(([phase, tasksGroup]) => (
-            <div key={phase} className="space-y-4">
-              <PhaseHeader name={phase} />
+        <div className="space-y-4">
+          {tasksByPhase.map(([phase, tasksGroup]) => {
+            const isCollapsed = collapsedPhases.has(phase);
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <KanbanColumn
-                  title="Not Started"
-                  tasks={tasksGroup.notStarted}
-                  color="gray"
+            return (
+              <div key={phase} className="space-y-4">
+                <PhaseHeader
+                  name={phase}
+                  isCollapsed={isCollapsed}
+                  onToggle={() => togglePhase(phase)}
                 />
-                <KanbanColumn
-                  title="In Progress"
-                  tasks={tasksGroup.inProgress}
-                  color="amber"
-                />
-                <KanbanColumn
-                  title="Done"
-                  tasks={tasksGroup.done}
-                  color="emerald"
-                />
+
+                {!isCollapsed && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <KanbanColumn
+                      title="Not Started"
+                      tasks={tasksGroup.notStarted}
+                      color="gray"
+                    />
+                    <KanbanColumn
+                      title="In Progress"
+                      tasks={tasksGroup.inProgress}
+                      color="amber"
+                    />
+                    <KanbanColumn
+                      title="Done"
+                      tasks={tasksGroup.done}
+                      color="emerald"
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
 
 export default KanbanBoard;
