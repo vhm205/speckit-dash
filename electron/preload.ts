@@ -91,16 +91,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // ========================================
 
   configureAIProvider: (
-    provider: "openai" | "ollama",
+    provider: "openai" | "ollama" | "openrouter",
     config: Record<string, unknown>,
   ) => ipcRenderer.invoke("ai-provider:configure", { provider, config }),
 
   getAIProviderConfig: () => ipcRenderer.invoke("ai-provider:get-config"),
 
-  switchAIProvider: (provider: "openai" | "ollama") =>
+  switchAIProvider: (provider: "openai" | "ollama" | "openrouter") =>
     ipcRenderer.invoke("ai-provider:switch", { provider }),
 
-  testAIConnection: (provider: "openai" | "ollama") =>
+  testAIConnection: (provider: "openai" | "ollama" | "openrouter") =>
     ipcRenderer.invoke("ai-provider:test-connection", { provider }),
 
   // ========================================

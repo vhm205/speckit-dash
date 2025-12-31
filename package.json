@@ -106,13 +106,17 @@
       "electron/**/*"
     ],
     "mac": {
+      "target": "dmg",
       "category": "public.app-category.developer-tools"
     },
     "win": {
       "target": "nsis"
     },
     "linux": {
-      "target": "AppImage"
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     }
   }
 }

@@ -53,8 +53,14 @@ const ChevronDownIcon = () => (
   </svg>
 );
 
+const TrashIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
+
 export function Navbar() {
-  const { activeProject, projects, selectProject } = useProject();
+  const { activeProject, projects, selectProject, removeProject } = useProject();
   const { resolvedTheme, toggleTheme } = useTheme();
   const [showConfigModal, setShowConfigModal] = useState(false);
 
@@ -130,22 +136,38 @@ export function Navbar() {
                   aria-labelledby="hs-dropdown-project"
                 >
                   {projects.map((project) => (
-                    <button
+                    <div
                       key={project.id}
-                      onClick={() => selectProject(project.id)}
-                      className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${activeProject?.id === project.id
+                      className={`group w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${activeProject?.id === project.id
                         ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
                         : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                     >
-                      <FolderIcon />
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">{project.name}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-                          {project.rootPath}
-                        </span>
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => selectProject(project.id)}
+                        className="flex-1 flex items-start gap-3 w-full"
+                      >
+                        <FolderIcon />
+                        <div className="flex flex-col items-start text-left">
+                          <span className="font-medium">{project.name}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                            {project.rootPath}
+                          </span>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm('Are you sure you want to remove this project from the list? Data will be preserved.')) {
+                            removeProject(project.id);
+                          }
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded opacity-0 group-hover:opacity-100 transition-all"
+                        title="Remove from list"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   ))}
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
                   <button

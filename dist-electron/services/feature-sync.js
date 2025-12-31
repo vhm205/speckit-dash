@@ -99,7 +99,6 @@ async function syncProjectFeatures(projectId, projectPath) {
                 const content = fs_1.default.readFileSync(dataModelPath, "utf-8");
                 const parsed = await (0, data_model_parser_1.parseDataModelContent)(content);
                 for (const entity of parsed.entities) {
-                    console.log({ entity });
                     database_1.databaseService.upsertEntity(feature.id, entity.name, {
                         description: entity.description || undefined,
                         attributes: entity.attributes,

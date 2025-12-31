@@ -12,7 +12,7 @@ import { syncProjectFeatures } from "./feature-sync";
 import { aiProviderService } from "./ai-provider";
 import { analysisService } from "./analysis-service";
 import { architectureAnalyzer } from "./architecture-analyzer";
-import type { OllamaConfig, OpenAIConfig } from "./ai-provider";
+import type { OllamaConfig, OpenAIConfig, OpenRouterConfig } from "./ai-provider";
 
 /**
  * Normalize path to handle cross-platform paths
@@ -121,7 +121,13 @@ export function registerIPCHandlers(): void {
         // Check if already exists
         const existing = databaseService.getProjectByPath(normalizedPath);
         if (existing) {
-          databaseService.updateProjectLastOpened(existing.id);
+          // Reactivate if it was soft-deleted
+          if (existing.is_active === 0) {
+            databaseService.reactivateProject(existing.id);
+          } else {
+            databaseService.updateProjectLastOpened(existing.id);
+          }
+
           return {
             success: true,
             data: {
@@ -552,15 +558,17 @@ export function registerIPCHandlers(): void {
     async (
       _event,
       { provider, config }: {
-        provider: "openai" | "ollama";
-        config: OpenAIConfig | OllamaConfig;
+        provider: "openai" | "ollama" | "openrouter";
+        config: OpenAIConfig | OllamaConfig | OpenRouterConfig;
       },
     ) => {
       try {
         if (provider === "openai") {
           await aiProviderService.configureOpenAI(config as OpenAIConfig);
-        } else {
+        } else if (provider === "ollama") {
           await aiProviderService.configureOllama(config as OllamaConfig);
+        } else {
+          await aiProviderService.configureOpenRouter(config as OpenRouterConfig);
         }
 
         return {
@@ -597,7 +605,7 @@ export function registerIPCHandlers(): void {
 
   ipcMain.handle(
     "ai-provider:switch",
-    async (_event, { provider }: { provider: "openai" | "ollama" }) => {
+    async (_event, { provider }: { provider: "openai" | "ollama" | "openrouter" }) => {
       try {
         await aiProviderService.switchProvider(provider);
         return {
@@ -618,7 +626,7 @@ export function registerIPCHandlers(): void {
 
   ipcMain.handle(
     "ai-provider:test-connection",
-    async (_event, { provider }: { provider: "openai" | "ollama" }) => {
+    async (_event, { provider }: { provider: "openai" | "ollama" | "openrouter" }) => {
       try {
         const result = await aiProviderService.testConnection(provider);
         return {

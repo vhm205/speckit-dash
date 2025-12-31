@@ -9,22 +9,41 @@ import { useAIProvider, type AIProviderType } from '../../contexts/AIProviderCon
 import { useSettings } from '../../contexts/SettingsContext';
 import OpenAIConfig from './OpenAIConfig';
 import OllamaConfig from './OllamaConfig';
+import OpenRouterConfig from './OpenRouterConfig';
 import ConnectionTest from './ConnectionTest';
 
-type SettingsTab = 'openai' | 'ollama' | 'general';
+type SettingsTab = 'providers' | 'general';
 
 export function AISettings() {
   const { config, activeProvider, isLoading, error, switchProvider } = useAIProvider();
   const { blurLevel, setBlurLevel } = useSettings();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('providers');
+  const [selectedProvider, setSelectedProvider] = useState<AIProviderType>(() => activeProvider || 'openai');
   const [isSwitching, setIsSwitching] = useState(false);
 
   const handleSwitchProvider = async (provider: AIProviderType) => {
     if (provider === activeProvider) return;
 
     setIsSwitching(true);
-    await switchProvider(provider);
+    const success = await switchProvider(provider);
     setIsSwitching(false);
+
+    if (success) {
+      setSelectedProvider(provider);
+    }
+  };
+
+  const getProviderLabel = (provider: AIProviderType): string => {
+    switch (provider) {
+      case 'openai':
+        return 'OpenAI';
+      case 'ollama':
+        return 'Ollama (Local)';
+      case 'openrouter':
+        return 'OpenRouter';
+      default:
+        return provider;
+    }
   };
 
   if (isLoading) {
@@ -56,6 +75,15 @@ export function AISettings() {
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4" aria-label="Tabs">
           <button
+            onClick={() => setActiveTab('providers')}
+            className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'providers'
+              ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+          >
+            AI Providers
+          </button>
+          <button
             onClick={() => setActiveTab('general')}
             className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'general'
               ? 'border-violet-500 text-violet-600 dark:text-violet-400'
@@ -64,29 +92,11 @@ export function AISettings() {
           >
             General
           </button>
-          <button
-            onClick={() => setActiveTab('openai')}
-            className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'openai'
-              ? 'border-violet-500 text-violet-600 dark:text-violet-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-          >
-            OpenAI
-          </button>
-          <button
-            onClick={() => setActiveTab('ollama')}
-            className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ollama'
-              ? 'border-violet-500 text-violet-600 dark:text-violet-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-          >
-            Ollama (Local)
-          </button>
         </nav>
       </div>
 
       {/* Error display */}
-      {error && activeTab !== 'general' && (
+      {error && activeTab === 'providers' && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
         </div>
@@ -132,61 +142,90 @@ export function AISettings() {
           </div>
         ) : (
           <>
-            {/* Active Provider Badge */}
-            {activeProvider && (
-              <div className="mb-6 flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Active:</span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
-                  {activeProvider === 'openai' ? 'OpenAI' : 'Ollama'}
-                </span>
-              </div>
-            )}
+            {/* Provider Selection */}
+            <Card className="mb-6">
+              <CardBody>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Select AI Provider
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      Choose which AI provider to configure and use for analysis
+                    </p>
+                  </div>
 
-            {activeTab === 'openai' ? (
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <select
+                        value={selectedProvider}
+                        onChange={(e) => setSelectedProvider(e.target.value as AIProviderType)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      >
+                        <option value="openai">OpenAI</option>
+                        <option value="ollama">Ollama (Local)</option>
+                        <option value="openrouter">OpenRouter</option>
+                      </select>
+                    </div>
+
+                    {activeProvider && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Active:</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+                          {getProviderLabel(activeProvider)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Switch Provider Button */}
+                  {selectedProvider !== activeProvider && (
+                    <div className="pt-2">
+                      <Button
+                        variant="primary"
+                        onClick={() => handleSwitchProvider(selectedProvider)}
+                        disabled={isSwitching}
+                      >
+                        {isSwitching ? 'Switching...' : `Switch to ${getProviderLabel(selectedProvider)}`}
+                      </Button>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        All AI analysis will use this provider after switching
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Provider Configuration */}
+            {selectedProvider === 'openai' && (
               <OpenAIConfig
                 isActive={activeProvider === 'openai'}
                 config={config?.openai}
               />
-            ) : (
+            )}
+
+            {selectedProvider === 'ollama' && (
               <OllamaConfig
                 isActive={activeProvider === 'ollama'}
                 config={config?.ollama}
               />
             )}
 
+            {selectedProvider === 'openrouter' && (
+              <OpenRouterConfig
+                isActive={activeProvider === 'openrouter'}
+                config={config?.openrouter}
+              />
+            )}
+
+            {/* Connection Test */}
             <div className="mt-6">
-              <ConnectionTest provider={activeTab as AIProviderType} />
+              <ConnectionTest provider={selectedProvider} />
             </div>
           </>
         )}
       </div>
-
-
-      {/* Switch Provider Button */}
-      {activeTab !== 'general' && activeTab !== activeProvider && (
-        <Card className="bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800">
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  Switch to {activeTab === 'openai' ? 'OpenAI' : 'Ollama'}?
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  All AI analysis will use this provider
-                </p>
-              </div>
-              <Button
-                variant="primary"
-                onClick={() => handleSwitchProvider(activeTab as AIProviderType)}
-                disabled={isSwitching}
-              >
-                {isSwitching ? 'Switching...' : 'Switch Provider'}
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
     </div>
   );
 }

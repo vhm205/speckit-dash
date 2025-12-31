@@ -14,6 +14,7 @@ interface DbProject {
   name: string;
   root_path: string;
   last_opened_at: number;
+  is_active: number;
   created_at: number;
 }
 
@@ -118,6 +119,29 @@ class DatabaseService {
 
     // Ensure architecture_analysis table exists
     this.ensureArchitectureAnalysisTable();
+
+    // Migrations
+    this.ensureProjectIsActiveColumn();
+  }
+
+  /**
+   * Ensure is_active column exists in projects table
+   */
+  private ensureProjectIsActiveColumn(): void {
+    if (!this.db) return;
+
+    const info = this.db.prepare("PRAGMA table_info(projects)")
+      .all() as Array<{ name: string }>;
+    const hasIsActive = info.some((col) => col.name === "is_active");
+
+    if (!hasIsActive) {
+      try {
+        this.db.exec("ALTER TABLE projects ADD COLUMN is_active INTEGER DEFAULT 1");
+        console.log("Added is_active column to projects table");
+      } catch (err) {
+        console.error("Failed to add is_active column to projects", err);
+      }
+    }
   }
 
   /**
@@ -205,8 +229,8 @@ class DatabaseService {
   createProject(name: string, rootPath: string): DbProject {
     const now = Date.now();
     const stmt = this.db!.prepare(`
-      INSERT INTO projects (name, root_path, last_opened_at, created_at)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO projects (name, root_path, last_opened_at, is_active, created_at)
+      VALUES (?, ?, ?, 1, ?)
     `);
     const result = stmt.run(name, rootPath, now, now);
 
@@ -215,6 +239,7 @@ class DatabaseService {
       name,
       root_path: rootPath,
       last_opened_at: now,
+      is_active: 1,
       created_at: now,
     };
   }
@@ -231,9 +256,16 @@ class DatabaseService {
 
   getAllProjects(): DbProject[] {
     const stmt = this.db!.prepare(
-      "SELECT * FROM projects ORDER BY last_opened_at DESC",
+      "SELECT * FROM projects WHERE is_active = 1 ORDER BY last_opened_at DESC",
     );
     return stmt.all() as DbProject[];
+  }
+
+  reactivateProject(id: number): void {
+    const stmt = this.db!.prepare(
+      "UPDATE projects SET is_active = 1, last_opened_at = ? WHERE id = ?",
+    );
+    stmt.run(Date.now(), id);
   }
 
   updateProjectLastOpened(id: number): void {
@@ -244,7 +276,7 @@ class DatabaseService {
   }
 
   deleteProject(id: number): void {
-    const stmt = this.db!.prepare("DELETE FROM projects WHERE id = ?");
+    const stmt = this.db!.prepare("UPDATE projects SET is_active = 0 WHERE id = ?");
     stmt.run(id);
   }
 

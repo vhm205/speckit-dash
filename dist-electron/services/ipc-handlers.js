@@ -104,7 +104,13 @@ function registerIPCHandlers() {
             // Check if already exists
             const existing = database_1.databaseService.getProjectByPath(normalizedPath);
             if (existing) {
-                database_1.databaseService.updateProjectLastOpened(existing.id);
+                // Reactivate if it was soft-deleted
+                if (existing.is_active === 0) {
+                    database_1.databaseService.reactivateProject(existing.id);
+                }
+                else {
+                    database_1.databaseService.updateProjectLastOpened(existing.id);
+                }
                 return {
                     success: true,
                     data: {
@@ -483,8 +489,11 @@ function registerIPCHandlers() {
             if (provider === "openai") {
                 await ai_provider_1.aiProviderService.configureOpenAI(config);
             }
-            else {
+            else if (provider === "ollama") {
                 await ai_provider_1.aiProviderService.configureOllama(config);
+            }
+            else {
+                await ai_provider_1.aiProviderService.configureOpenRouter(config);
             }
             return {
                 success: true,

@@ -13,12 +13,16 @@ import {
   isEncryptionAvailable,
 } from "../utils/encryption";
 import { createOllamaProvider, OllamaProvider } from "./ollama-provider";
+import {
+  createOpenRouterProvider,
+  OpenRouterProvider,
+} from "./openrouter-provider";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type AIProviderType = "openai" | "ollama";
+export type AIProviderType = "openai" | "ollama" | "openrouter";
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -31,6 +35,13 @@ export interface OllamaConfig {
   baseURL: string;
   model: string;
   timeout?: number;
+}
+
+export interface OpenRouterConfig {
+  apiKey: string;
+  model: string;
+  siteUrl?: string;
+  appName?: string;
 }
 
 interface StoredOpenAIConfig {
@@ -46,10 +57,18 @@ interface StoredOllamaConfig {
   timeout?: number;
 }
 
+interface StoredOpenRouterConfig {
+  encryptedApiKey: string;
+  model: string;
+  siteUrl?: string;
+  appName?: string;
+}
+
 interface AIProviderStore {
   activeProvider: AIProviderType | null;
   openai: StoredOpenAIConfig | null;
   ollama: StoredOllamaConfig | null;
+  openrouter: StoredOpenRouterConfig | null;
 }
 
 export interface SafeOpenAIConfig {
@@ -64,10 +83,18 @@ export interface SafeOllamaConfig {
   isRunning: boolean;
 }
 
+export interface SafeOpenRouterConfig {
+  model: string;
+  hasApiKey: boolean;
+  siteUrl?: string;
+  appName?: string;
+}
+
 export interface AIProviderConfigResponse {
   activeProvider: AIProviderType | null;
   openai?: SafeOpenAIConfig;
   ollama?: SafeOllamaConfig;
+  openrouter?: SafeOpenRouterConfig;
 }
 
 export interface TestConnectionResult {
@@ -85,6 +112,7 @@ class AIProviderService {
   private store: Store<AIProviderStore>;
   private openaiProvider: ReturnType<typeof createOpenAI> | null = null;
   private ollamaProvider: OllamaProvider | null = null;
+  private openrouterProvider: OpenRouterProvider | null = null;
 
   constructor() {
     this.store = new Store<AIProviderStore>({
@@ -93,6 +121,7 @@ class AIProviderService {
         activeProvider: null,
         openai: null,
         ollama: null,
+        openrouter: null,
       },
     });
   }
@@ -148,6 +177,31 @@ class AIProviderService {
   }
 
   /**
+   * Configure OpenRouter provider
+   */
+  async configureOpenRouter(config: OpenRouterConfig): Promise<void> {
+    // Encrypt API key before storing
+    const { encrypted } = encryptApiKey(config.apiKey);
+
+    const storedConfig: StoredOpenRouterConfig = {
+      encryptedApiKey: encrypted,
+      model: config.model,
+      siteUrl: config.siteUrl,
+      appName: config.appName,
+    };
+
+    this.store.set("openrouter", storedConfig);
+
+    // Initialize provider
+    this.initializeOpenRouter(config.apiKey, config);
+
+    // Set as active if no provider is active
+    if (!this.store.get("activeProvider")) {
+      this.store.set("activeProvider", "openrouter");
+    }
+  }
+
+  /**
    * Get current configuration (safe for renderer - no API keys)
    */
   async getConfig(): Promise<AIProviderConfigResponse> {
@@ -184,6 +238,16 @@ class AIProviderService {
       };
     }
 
+    const openrouterConfig = this.store.get("openrouter");
+    if (openrouterConfig) {
+      response.openrouter = {
+        model: openrouterConfig.model,
+        hasApiKey: !!openrouterConfig.encryptedApiKey,
+        siteUrl: openrouterConfig.siteUrl,
+        appName: openrouterConfig.appName,
+      };
+    }
+
     return response;
   }
 
@@ -194,7 +258,9 @@ class AIProviderService {
     // Verify provider is configured
     const config = provider === "openai"
       ? this.store.get("openai")
-      : this.store.get("ollama");
+      : provider === "ollama"
+        ? this.store.get("ollama")
+        : this.store.get("openrouter");
 
     if (!config) {
       throw new Error(`Provider ${provider} is not configured`);
@@ -229,8 +295,10 @@ class AIProviderService {
 
     if (activeProvider === "openai") {
       return this.getOpenAIModel();
-    } else {
+    } else if (activeProvider === "ollama") {
       return this.getOllamaModel();
+    } else {
+      return this.getOpenRouterModel();
     }
   }
 
@@ -267,6 +335,23 @@ class AIProviderService {
     return this.ollamaProvider!.getModel(config.model);
   }
 
+  /**
+   * Get OpenRouter language model
+   */
+  private getOpenRouterModel(): LanguageModel {
+    const config = this.store.get("openrouter");
+    if (!config) {
+      throw new Error("OpenRouter is not configured");
+    }
+
+    if (!this.openrouterProvider) {
+      const apiKey = decryptApiKey(config.encryptedApiKey);
+      this.initializeOpenRouter(apiKey, config);
+    }
+
+    return this.openrouterProvider!.getModel(config.model);
+  }
+
   // ========================================
   // Initialization Methods
   // ========================================
@@ -289,6 +374,17 @@ class AIProviderService {
     });
   }
 
+  private initializeOpenRouter(
+    apiKey: string,
+    config: { siteUrl?: string; appName?: string },
+  ): void {
+    this.openrouterProvider = createOpenRouterProvider({
+      apiKey,
+      siteUrl: config.siteUrl,
+      appName: config.appName,
+    });
+  }
+
   // ========================================
   // Connection Testing
   // ========================================
@@ -303,8 +399,10 @@ class AIProviderService {
 
     if (provider === "openai") {
       return this.testOpenAIConnection(startTime);
-    } else {
+    } else if (provider === "ollama") {
       return this.testOllamaConnection(startTime);
+    } else {
+      return this.testOpenRouterConnection(startTime);
     }
   }
 
@@ -393,6 +491,57 @@ class AIProviderService {
         available: false,
         latency: Date.now() - startTime,
         error: error instanceof Error ? error.message : "Ollama is not running",
+      };
+    }
+  }
+
+  private async testOpenRouterConnection(
+    startTime: number,
+  ): Promise<TestConnectionResult> {
+    const config = this.store.get("openrouter");
+    if (!config) {
+      return {
+        available: false,
+        latency: 0,
+        error: "OpenRouter is not configured",
+      };
+    }
+
+    try {
+      const apiKey = decryptApiKey(config.encryptedApiKey);
+
+      const response = await fetch("https://openrouter.ai/api/v1/models/user", {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      const latency = Date.now() - startTime;
+
+      if (!response.ok) {
+        return {
+          available: false,
+          latency,
+          error: response.status === 401
+            ? "Invalid API key"
+            : `API error: ${response.status}`,
+        };
+      }
+
+      const data = (await response.json()) as { data: { id: string }[] };
+      const models = data.data?.map((m: { id: string }) => m.id) || [];
+
+      return {
+        available: true,
+        latency,
+        models, // Return all models
+      };
+    } catch (error) {
+      return {
+        available: false,
+        latency: Date.now() - startTime,
+        error: error instanceof Error ? error.message : "Connection failed",
       };
     }
   }

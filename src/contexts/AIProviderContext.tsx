@@ -9,7 +9,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, R
 // Types
 // ============================================================================
 
-export type AIProviderType = 'openai' | 'ollama';
+export type AIProviderType = 'openai' | 'ollama' | 'openrouter';
 
 interface SafeOpenAIConfig {
   model: string;
@@ -23,10 +23,18 @@ interface SafeOllamaConfig {
   isRunning: boolean;
 }
 
+interface SafeOpenRouterConfig {
+  model: string;
+  hasApiKey: boolean;
+  siteUrl?: string;
+  appName?: string;
+}
+
 interface AIProviderConfig {
   activeProvider: AIProviderType | null;
   openai?: SafeOpenAIConfig;
   ollama?: SafeOllamaConfig;
+  openrouter?: SafeOpenRouterConfig;
 }
 
 interface TestConnectionResult {
@@ -45,6 +53,7 @@ interface AIProviderContextValue {
   refreshConfig: () => Promise<void>;
   configureOpenAI: (apiKey: string, model: string, baseURL?: string) => Promise<boolean>;
   configureOllama: (baseURL: string, model: string) => Promise<boolean>;
+  configureOpenRouter: (apiKey: string, model: string, siteUrl?: string, appName?: string) => Promise<boolean>;
   switchProvider: (provider: AIProviderType) => Promise<boolean>;
   testConnection: (provider: AIProviderType) => Promise<TestConnectionResult>;
 }
@@ -136,6 +145,33 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
     }
   }, [refreshConfig]);
 
+  const configureOpenRouter = useCallback(async (
+    apiKey: string,
+    model: string,
+    siteUrl?: string,
+    appName?: string
+  ): Promise<boolean> => {
+    try {
+      const response = await window.electronAPI.configureAIProvider('openrouter', {
+        apiKey,
+        model,
+        siteUrl,
+        appName,
+      });
+
+      if (response.success) {
+        await refreshConfig();
+        return true;
+      }
+
+      setError(response.error || 'Failed to configure OpenRouter');
+      return false;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Configuration failed');
+      return false;
+    }
+  }, [refreshConfig]);
+
   const switchProvider = useCallback(async (provider: AIProviderType): Promise<boolean> => {
     try {
       const response = await window.electronAPI.switchAIProvider(provider);
@@ -184,6 +220,7 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
     refreshConfig,
     configureOpenAI,
     configureOllama,
+    configureOpenRouter,
     switchProvider,
     testConnection,
   }), [
@@ -193,6 +230,7 @@ export function AIProviderProvider({ children }: AIProviderProviderProps) {
     refreshConfig,
     configureOpenAI,
     configureOllama,
+    configureOpenRouter,
     switchProvider,
     testConnection
   ]);

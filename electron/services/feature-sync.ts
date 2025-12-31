@@ -132,7 +132,6 @@ export async function syncProjectFeatures(
         const parsed = await parseDataModelContent(content);
 
         for (const entity of parsed.entities) {
-          console.log({ entity });
           databaseService.upsertEntity(feature.id, entity.name, {
             description: entity.description || undefined,
             attributes: entity.attributes,

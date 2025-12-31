@@ -201,21 +201,22 @@ export interface ElectronAPI {
 
   // AI Provider methods
   configureAIProvider: (
-    provider: "openai" | "ollama",
+    provider: "openai" | "ollama" | "openrouter",
     config: Record<string, unknown>,
   ) => Promise<IPCResponse<{ activeProvider: string }>>;
   getAIProviderConfig: () => Promise<
     IPCResponse<{
-      activeProvider: "openai" | "ollama" | null;
+      activeProvider: "openai" | "ollama" | "openrouter" | null;
       openai?: { model: string; baseURL: string; hasApiKey: boolean };
       ollama?: { baseURL: string; model: string; isRunning: boolean };
+      openrouter?: { model: string; hasApiKey: boolean; siteUrl?: string; appName?: string };
     }>
   >;
   switchAIProvider: (
-    provider: "openai" | "ollama",
+    provider: "openai" | "ollama" | "openrouter",
   ) => Promise<IPCResponse<{ activeProvider: string }>>;
   testAIConnection: (
-    provider: "openai" | "ollama",
+    provider: "openai" | "ollama" | "openrouter",
   ) => Promise<
     IPCResponse<{
       available: boolean;

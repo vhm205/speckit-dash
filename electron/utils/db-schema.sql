@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   root_path TEXT UNIQUE NOT NULL,
   last_opened_at INTEGER NOT NULL,
+  is_active INTEGER DEFAULT 1,
   created_at INTEGER NOT NULL
 );
 
