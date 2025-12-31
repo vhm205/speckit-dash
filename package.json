@@ -33,7 +33,11 @@
     "dashboard",
     "electron"
   ],
-  "author": "",
+  "author": {
+    "name": "M2T",
+    "email": "vuhuynhminh9221@gmail.com",
+    "url": "https://vhm-cv.vercel.app"
+  },
   "license": "MIT",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.1",
@@ -110,13 +114,15 @@
       "category": "public.app-category.developer-tools"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "public/icons/speckit-dash-icon.ico"
     },
     "linux": {
       "target": [
         "AppImage",
         "deb"
-      ]
+      ],
+      "icon": "public/icons/speckit-dash-icon.png"
     }
   }
 }

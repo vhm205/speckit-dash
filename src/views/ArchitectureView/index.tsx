@@ -65,18 +65,6 @@ export function ArchitectureView() {
     loadFeature();
   }, [featureId]);
 
-  // Trigger architecture analysis
-  const handleAnalyzeArchitecture = useCallback(async (force: boolean = false) => {
-    if (!featureId) return;
-
-    clearError();
-    const result = await analyzeArchitecture(Number(featureId), force);
-
-    if (result) {
-      convertToReactFlowElements(result);
-    }
-  }, [featureId, analyzeArchitecture, clearError]);
-
   // Convert architecture data to ReactFlow nodes and edges
   const convertToReactFlowElements = useCallback((architecture: ArchitectureResult) => {
     const newNodes: Node[] = [];
@@ -167,12 +155,24 @@ export function ArchitectureView() {
     setEdges(layoutedEdges);
   }, [setNodes, setEdges]);
 
+  // Trigger architecture analysis
+  const handleAnalyzeArchitecture = useCallback(async (force: boolean = false) => {
+    if (!featureId) return;
+
+    clearError();
+    const result = await analyzeArchitecture(Number(featureId), force);
+
+    if (result) {
+      convertToReactFlowElements(result);
+    }
+  }, [featureId, analyzeArchitecture, clearError, convertToReactFlowElements]);
+
   // Auto-analyze on mount
   useEffect(() => {
     if (featureId && !isLoadingFeature && feature) {
       handleAnalyzeArchitecture();
     }
-  }, [featureId, isLoadingFeature, feature]);  // Removed handleAnalyzeArchitecture to avoid loop
+  }, [featureId, isLoadingFeature, feature, handleAnalyzeArchitecture]);
 
   const isLoading = isLoadingFeature || isAnalyzing;
   const error = featureError || analysisError;
@@ -277,7 +277,7 @@ export function ArchitectureView() {
           </Button>
           <Button
             size="sm"
-            color="primary"
+            variant="primary"
             onPress={() => handleAnalyzeArchitecture(true)}
             isDisabled={isAnalyzing}
           >
@@ -303,11 +303,11 @@ export function ArchitectureView() {
             </div>
             <h3 className="text-lg font-semibold mb-2">No Architecture Information Found</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              The AI couldn't extract architecture components from the documentation.
+              The AI couldn&apos;t extract architecture components from the documentation.
               <br />
               Ensure your spec.md, plan.md, or other documentation files contain architectural details.
             </p>
-            <Button color="primary" onPress={() => handleAnalyzeArchitecture(true)}>
+            <Button variant="primary" onPress={() => handleAnalyzeArchitecture(true)}>
               Try Again
             </Button>
           </CardBody>
