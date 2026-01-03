@@ -64,7 +64,8 @@
     "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "unified": "^11.0.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zod": "^4.3.2"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.6.0",
@@ -111,18 +112,19 @@
     ],
     "mac": {
       "target": "dmg",
+      "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools"
     },
     "win": {
       "target": "nsis",
-      "icon": "public/icons/speckit-dash-icon.ico"
+      "icon": "build/speckit-dash-icon.ico"
     },
     "linux": {
       "target": [
         "AppImage",
         "deb"
       ],
-      "icon": "public/icons/speckit-dash-icon.png"
+      "icon": "build/speckit-dash-icon.png"
     }
   }
 }

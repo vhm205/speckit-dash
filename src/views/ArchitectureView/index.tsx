@@ -313,7 +313,7 @@ export function ArchitectureView() {
           </CardBody>
         </Card>
       ) : (
-        <Card className="h-[600px] overflow-hidden">
+        <Card className="h-[calc(100vh-200px)] overflow-hidden">
           <ReactFlow
             nodes={nodes}
             edges={edges}

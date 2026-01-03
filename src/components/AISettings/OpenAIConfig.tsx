@@ -18,19 +18,20 @@ interface OpenAIConfigProps {
   config?: SafeOpenAIConfig;
 }
 
+// Default OpenAI models suitable for context analysis, ordered by cost-effectiveness
 const DEFAULT_OPENAI_MODELS = [
-  'gpt-4o',
-  'gpt-4o-mini',
-  'gpt-4-turbo',
-  'gpt-4',
-  'gpt-3.5-turbo',
+  'gpt-4o-mini',      // Most cost-effective modern model with strong performance
+  'gpt-3.5-turbo',    // Cost-effective legacy model
+  'gpt-4o',           // Latest, most capable (higher cost)
+  'gpt-4-turbo',      // High capability
+  'gpt-4',            // Standard GPT-4
 ];
 
 export function OpenAIConfig({ isActive, config }: OpenAIConfigProps) {
   const { configureOpenAI, testConnection } = useAIProvider();
 
   const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState(config?.model || 'gpt-4o');
+  const [model, setModel] = useState(config?.model || 'gpt-4o-mini');
   const [baseURL, setBaseURL] = useState(config?.baseURL || '');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -46,14 +47,20 @@ export function OpenAIConfig({ isActive, config }: OpenAIConfigProps) {
     setIsLoadingModels(true);
     try {
       const result = await testConnection('openai');
+
       if (result.models && result.models.length > 0) {
         setAvailableModels(result.models);
         // Set default model if current model is not in the list
         if (!model || !result.models.includes(model)) {
-          // Prefer gpt-4o if available, otherwise use first model
-          const defaultModel = result.models.includes('gpt-4o')
-            ? 'gpt-4o'
-            : result.models[0];
+          // Prioritize cost-effective models for SpecKit context analysis
+          // Order: gpt-4o-mini > gpt-3.5-turbo > gpt-4o > first available
+          const defaultModel = result.models.includes('gpt-4o-mini')
+            ? 'gpt-4o-mini'
+            : result.models.includes('gpt-3.5-turbo')
+              ? 'gpt-3.5-turbo'
+              : result.models.includes('gpt-4o')
+                ? 'gpt-4o'
+                : result.models[0];
           setModel(defaultModel);
         }
       }
@@ -98,7 +105,8 @@ export function OpenAIConfig({ isActive, config }: OpenAIConfigProps) {
     setSaveError(null);
     setSaveSuccess(false);
 
-    // Use existing key if not provided
+    // Preserve existing key if user didn't enter a new one
+    // The '__EXISTING_KEY__' placeholder tells the backend to keep the existing encrypted key
     const keyToUse = apiKey || '__EXISTING_KEY__';
 
     const success = await configureOpenAI(

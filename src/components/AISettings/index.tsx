@@ -83,7 +83,7 @@ export function AISettings() {
           >
             AI Providers
           </button>
-          <button
+          {/* <button
             onClick={() => setActiveTab('general')}
             className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'general'
               ? 'border-violet-500 text-violet-600 dark:text-violet-400'
@@ -91,7 +91,7 @@ export function AISettings() {
               }`}
           >
             General
-          </button>
+          </button> */}
         </nav>
       </div>
 

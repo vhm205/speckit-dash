@@ -134,11 +134,27 @@ class AIProviderService {
    * Configure OpenAI provider
    */
   async configureOpenAI(config: OpenAIConfig): Promise<void> {
-    // Encrypt API key before storing
-    const { encrypted } = encryptApiKey(config.apiKey);
+    // Handle API key - preserve existing if not changed
+    let encryptedApiKey: string;
+    let apiKeyToUse: string;
+
+    if (config.apiKey === "__EXISTING_KEY__") {
+      // User didn't change the API key, preserve existing
+      const existingConfig = this.store.get("openai");
+      if (!existingConfig?.encryptedApiKey) {
+        throw new Error("No existing API key found");
+      }
+      encryptedApiKey = existingConfig.encryptedApiKey;
+      apiKeyToUse = decryptApiKey(encryptedApiKey);
+    } else {
+      // New API key provided, encrypt it
+      const { encrypted } = encryptApiKey(config.apiKey);
+      encryptedApiKey = encrypted;
+      apiKeyToUse = config.apiKey;
+    }
 
     const storedConfig: StoredOpenAIConfig = {
-      encryptedApiKey: encrypted,
+      encryptedApiKey,
       model: config.model,
       baseURL: config.baseURL,
       organization: config.organization,
@@ -147,7 +163,7 @@ class AIProviderService {
     this.store.set("openai", storedConfig);
 
     // Initialize provider
-    this.initializeOpenAI(config.apiKey, config);
+    this.initializeOpenAI(apiKeyToUse, config);
 
     // Set as active if no provider is active
     if (!this.store.get("activeProvider")) {
@@ -180,11 +196,27 @@ class AIProviderService {
    * Configure OpenRouter provider
    */
   async configureOpenRouter(config: OpenRouterConfig): Promise<void> {
-    // Encrypt API key before storing
-    const { encrypted } = encryptApiKey(config.apiKey);
+    // Handle API key - preserve existing if not changed
+    let encryptedApiKey: string;
+    let apiKeyToUse: string;
+
+    if (config.apiKey === "__EXISTING_KEY__") {
+      // User didn't change the API key, preserve existing
+      const existingConfig = this.store.get("openrouter");
+      if (!existingConfig?.encryptedApiKey) {
+        throw new Error("No existing API key found");
+      }
+      encryptedApiKey = existingConfig.encryptedApiKey;
+      apiKeyToUse = decryptApiKey(encryptedApiKey);
+    } else {
+      // New API key provided, encrypt it
+      const { encrypted } = encryptApiKey(config.apiKey);
+      encryptedApiKey = encrypted;
+      apiKeyToUse = config.apiKey;
+    }
 
     const storedConfig: StoredOpenRouterConfig = {
-      encryptedApiKey: encrypted,
+      encryptedApiKey,
       model: config.model,
       siteUrl: config.siteUrl,
       appName: config.appName,
@@ -193,7 +225,7 @@ class AIProviderService {
     this.store.set("openrouter", storedConfig);
 
     // Initialize provider
-    this.initializeOpenRouter(config.apiKey, config);
+    this.initializeOpenRouter(apiKeyToUse, config);
 
     // Set as active if no provider is active
     if (!this.store.get("activeProvider")) {
@@ -259,8 +291,8 @@ class AIProviderService {
     const config = provider === "openai"
       ? this.store.get("openai")
       : provider === "ollama"
-        ? this.store.get("ollama")
-        : this.store.get("openrouter");
+      ? this.store.get("ollama")
+      : this.store.get("openrouter");
 
     if (!config) {
       throw new Error(`Provider ${provider} is not configured`);
@@ -441,12 +473,19 @@ class AIProviderService {
       }
 
       const data = (await response.json()) as { data: { id: string }[] };
-      const models = data.data?.map((m: { id: string }) => m.id) || [];
+
+      const allModels = data.data?.map((m: { id: string }) => m.id) || [];
+
+      // Filter models suitable for context analysis (chat completion models)
+      // Exclude embedding, audio, image, and moderation models
+      const filteredModels = this.filterOpenAIModelsForContextAnalysis(
+        allModels,
+      );
 
       return {
         available: true,
         latency,
-        models: models.slice(0, 10), // Return first 10 models
+        models: filteredModels,
       };
     } catch (error) {
       return {
@@ -455,6 +494,83 @@ class AIProviderService {
         error: error instanceof Error ? error.message : "Connection failed",
       };
     }
+  }
+
+  /**
+   * Filter OpenAI models to only include those suitable for context analysis
+   * Returns models in order of cost-effectiveness and capability
+   */
+  private filterOpenAIModelsForContextAnalysis(models: string[]): string[] {
+    // Models suitable for context analysis (chat completion)
+    const suitablePatterns = [
+      /^gpt-4o/, // GPT-4o models (latest, most capable)
+      // /^gpt-4-turbo/, // GPT-4 Turbo models
+      /^gpt-4/, // GPT-4 models
+      /^gpt-5/, // GPT-5 models
+      /^gpt-3\.5-turbo/, // GPT-3.5 Turbo models
+      /^chatgpt-4o/, // ChatGPT-4o models
+    ];
+
+    // Exclude models not suitable for context analysis
+    const excludePatterns = [
+      /embedding/i, // Embedding models
+      /whisper/i, // Audio models
+      /audio/i, // Audio models
+      /transcribe/i, // Audio models
+      /realtime/i, // Audio models
+      /tts/i, // Text-to-speech models
+      /dall-e/i, // Image generation models
+      /moderation/i, // Moderation models
+      /instruct/i, // Instruct models (use chat models instead)
+      /^text-/, // Legacy completion models
+      /^davinci/, // Legacy models
+      /^curie/, // Legacy models
+      /^babbage/, // Legacy models
+      /^ada/, // Legacy models
+    ];
+
+    // Filter models
+    const filtered = models.filter((model) => {
+      // Exclude if matches any exclude pattern
+      if (excludePatterns.some((pattern) => pattern.test(model))) {
+        return false;
+      }
+      // Include if matches any suitable pattern
+      return suitablePatterns.some((pattern) => pattern.test(model));
+    });
+
+    // Sort by priority for default selection
+    // Priority order: gpt-4o-mini, gpt-3.5-turbo, gpt-4o, gpt-4-turbo, others
+    const priorityOrder = [
+      "gpt-4o-mini", // Most cost-effective modern model
+      "gpt-3.5-turbo", // Cost-effective legacy model
+      "gpt-4o", // Latest, most capable
+      "gpt-4-turbo-preview", // High capability
+      "gpt-4-turbo", // High capability
+      "gpt-4", // Standard GPT-4
+    ];
+
+    const sorted = filtered.sort((a, b) => {
+      const indexA = priorityOrder.indexOf(a);
+      const indexB = priorityOrder.indexOf(b);
+
+      // If both are in priority list, sort by priority
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      // If only A is in priority list, A comes first
+      if (indexA !== -1) return -1;
+      // If only B is in priority list, B comes first
+      if (indexB !== -1) return 1;
+      // Otherwise maintain original order
+      return 0;
+    });
+
+    console.log(
+      `Filtered ${filtered.length} suitable models from ${models.length} total models`,
+    );
+
+    return sorted;
   }
 
   private async testOllamaConnection(

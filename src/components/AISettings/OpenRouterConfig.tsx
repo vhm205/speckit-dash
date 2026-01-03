@@ -43,6 +43,8 @@ export function OpenRouterConfig({ isActive, config }: OpenRouterConfigProps) {
         setSaveError(null);
         try {
             const result = await testConnection('openrouter');
+            console.log('result', result);
+
             if (result.models && result.models.length > 0) {
                 setAvailableModels(result.models);
                 if (!model && result.models.length > 0) {
@@ -91,7 +93,8 @@ export function OpenRouterConfig({ isActive, config }: OpenRouterConfigProps) {
         setSaveError(null);
         setSaveSuccess(false);
 
-        // Use existing key if not provided
+        // Preserve existing key if user didn't enter a new one
+        // The '__EXISTING_KEY__' placeholder tells the backend to keep the existing encrypted key
         const keyToUse = apiKey || '__EXISTING_KEY__';
 
         const success = await configureOpenRouter(
