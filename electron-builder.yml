@@ -2,6 +2,14 @@ appId: com.speckit.dashboard
 productName: Speckit Dashboard
 copyright: Copyright © 2025
 
+# Auto-update configuration
+# Update this with your GitHub repository details
+publish:
+  provider: github
+  owner: vhm205
+  repo: speckit-dash
+  private: true
+
 directories:
   output: release
   buildResources: build

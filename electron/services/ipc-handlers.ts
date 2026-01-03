@@ -12,7 +12,11 @@ import { syncProjectFeatures } from "./feature-sync";
 import { aiProviderService } from "./ai-provider";
 import { analysisService } from "./analysis-service";
 import { architectureAnalyzer } from "./architecture-analyzer";
-import type { OllamaConfig, OpenAIConfig, OpenRouterConfig } from "./ai-provider";
+import type {
+  OllamaConfig,
+  OpenAIConfig,
+  OpenRouterConfig,
+} from "./ai-provider";
 
 /**
  * Normalize path to handle cross-platform paths
@@ -65,8 +69,9 @@ function validateProjectPath(
   } catch (err) {
     return {
       valid: false,
-      error: `Cannot access path: ${err instanceof Error ? err.message : "Unknown error"
-        }`,
+      error: `Cannot access path: ${
+        err instanceof Error ? err.message : "Unknown error"
+      }`,
     };
   }
 
@@ -568,7 +573,9 @@ export function registerIPCHandlers(): void {
         } else if (provider === "ollama") {
           await aiProviderService.configureOllama(config as OllamaConfig);
         } else {
-          await aiProviderService.configureOpenRouter(config as OpenRouterConfig);
+          await aiProviderService.configureOpenRouter(
+            config as OpenRouterConfig,
+          );
         }
 
         return {
@@ -605,7 +612,10 @@ export function registerIPCHandlers(): void {
 
   ipcMain.handle(
     "ai-provider:switch",
-    async (_event, { provider }: { provider: "openai" | "ollama" | "openrouter" }) => {
+    async (
+      _event,
+      { provider }: { provider: "openai" | "ollama" | "openrouter" },
+    ) => {
       try {
         await aiProviderService.switchProvider(provider);
         return {
@@ -626,7 +636,10 @@ export function registerIPCHandlers(): void {
 
   ipcMain.handle(
     "ai-provider:test-connection",
-    async (_event, { provider }: { provider: "openai" | "ollama" | "openrouter" }) => {
+    async (
+      _event,
+      { provider }: { provider: "openai" | "ollama" | "openrouter" },
+    ) => {
       try {
         const result = await aiProviderService.testConnection(provider);
         return {
@@ -986,12 +999,13 @@ export function registerIPCHandlers(): void {
 
         // Construct file path based on spec_path
         const specDir = path.dirname(feature.spec_path);
-        const fileName = `${fileType === "data-model"
-          ? "data-model"
-          : fileType === "requirements"
+        const fileName = `${
+          fileType === "data-model"
+            ? "data-model"
+            : fileType === "requirements"
             ? "requirements"
             : fileType
-          }.md`;
+        }.md`;
         const filePath = fileType === "requirements"
           ? path.join(specDir, "checklists", "requirements.md")
           : path.join(specDir, fileName);
@@ -1068,4 +1082,24 @@ export function registerIPCHandlers(): void {
       }
     },
   );
+
+  // ========================================
+  // Auto-Update Handlers
+  // ========================================
+
+  ipcMain.on("download-update", async () => {
+    // Import autoUpdater here to avoid circular dependencies
+    const { autoUpdater } = await import("electron-updater");
+    try {
+      await autoUpdater.downloadUpdate();
+    } catch (error) {
+      console.error("Failed to download update:", error);
+    }
+  });
+
+  ipcMain.on("install-update", async () => {
+    // Import autoUpdater here to avoid circular dependencies
+    const { autoUpdater } = await import("electron-updater");
+    autoUpdater.quitAndInstall();
+  });
 }

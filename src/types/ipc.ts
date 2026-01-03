@@ -28,11 +28,11 @@ export interface ErrorResponse {
   success: false;
   error: string;
   code?:
-  | "INVALID_PATH"
-  | "NOT_FOUND"
-  | "DB_ERROR"
-  | "PARSE_ERROR"
-  | "FILE_SYSTEM_ERROR";
+    | "INVALID_PATH"
+    | "NOT_FOUND"
+    | "DB_ERROR"
+    | "PARSE_ERROR"
+    | "FILE_SYSTEM_ERROR";
 }
 
 export type IPCResponse<T = void> = SuccessResponse<T> | ErrorResponse;
@@ -209,7 +209,12 @@ export interface ElectronAPI {
       activeProvider: "openai" | "ollama" | "openrouter" | null;
       openai?: { model: string; baseURL: string; hasApiKey: boolean };
       ollama?: { baseURL: string; model: string; isRunning: boolean };
-      openrouter?: { model: string; hasApiKey: boolean; siteUrl?: string; appName?: string };
+      openrouter?: {
+        model: string;
+        hasApiKey: boolean;
+        siteUrl?: string;
+        appName?: string;
+      };
     }>
   >;
   switchAIProvider: (
@@ -382,6 +387,13 @@ declare global {
     electronAPI: ElectronAPI;
     HSStaticMethods: {
       autoInit(): void;
+    };
+    electron?: {
+      ipcRenderer: {
+        on(channel: string, func: (...args: unknown[]) => void): void;
+        send(channel: string, ...args: unknown[]): void;
+        removeAllListeners(channel: string): void;
+      };
     };
   }
 }

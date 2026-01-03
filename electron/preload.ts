@@ -160,3 +160,41 @@ contextBridge.exposeInMainWorld("electronAPI", {
     fileType: "spec" | "plan" | "tasks" | "data-model" | "requirements",
   ) => ipcRenderer.invoke("files:read-spec", { featureId, fileType }),
 });
+
+// ========================================
+// Auto-Update Event Handlers
+// ========================================
+
+// Expose ipcRenderer for auto-update events
+contextBridge.exposeInMainWorld("electron", {
+  ipcRenderer: {
+    on(channel: string, func: (...args: unknown[]) => void) {
+      // Whitelist channels for security
+      const validChannels = [
+        "update-available",
+        "update-downloaded",
+        "download-progress",
+      ];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.on(channel, func);
+      }
+    },
+    send(channel: string, ...args: unknown[]) {
+      // Whitelist channels for security
+      const validChannels = ["download-update", "install-update"];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.send(channel, ...args);
+      }
+    },
+    removeAllListeners(channel: string) {
+      const validChannels = [
+        "update-available",
+        "update-downloaded",
+        "download-progress",
+      ];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.removeAllListeners(channel);
+      }
+    },
+  },
+});

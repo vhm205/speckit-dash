@@ -19,6 +19,7 @@ import Navbar from './components/Navbar';
 import ProjectConfigModal from './components/ProjectConfigModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
+import AutoUpdater from './components/AutoUpdater';
 
 function App() {
   const { activeProject, isLoading, projects } = useProject();
@@ -83,6 +84,9 @@ function App() {
 
           {/* Project Configuration Modal */}
           <ProjectConfigModal isOpen={showConfigModal} onClose={() => { }} isRequired />
+
+          {/* Auto-Update Notifications */}
+          <AutoUpdater />
         </div>
       </div>
     </AIProviderProvider>
