@@ -1,8 +1,12 @@
 # Speckit Dashboard
 
-> **A modern visualization dashboard for Spec-kit documentation with AI-powered analysis**
+> **A modern visualization dashboard for Spec-kit documentation with AI-powered
+> analysis**
 
-Speckit Dashboard is an Electron-based desktop application that transforms your Spec-kit documentation into beautiful, interactive visualizations. Built with React, TypeScript, and integrated AI capabilities, it provides real-time insights into your project's features, tasks, architecture, and data models.
+Speckit Dashboard is an Electron-based desktop application that transforms your
+Spec-kit documentation into beautiful, interactive visualizations. Built with
+React, TypeScript, and integrated AI capabilities, it provides real-time
+insights into your project's features, tasks, architecture, and data models.
 
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/yourusername/speckit-dash)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -12,35 +16,98 @@ Speckit Dashboard is an Electron-based desktop application that transforms your 
 ## ✨ Features
 
 ### 📊 Project Visualization
-- **Stats Overview**: Real-time dashboard with feature progress, task completion metrics, and project health indicators
-- **Feature List**: Comprehensive view of all features with status tracking and metadata
-- **Kanban Board**: Drag-and-drop task management organized by phases (Planning, Development, Testing, Done)
-- **Gantt Timeline**: Project timeline visualization with task dependencies and milestones
+
+- **Stats Overview**: Real-time dashboard with feature progress, task completion
+  metrics, and project health indicators
+- **Feature List**: Comprehensive view of all features with status tracking and
+  metadata
+- **Kanban Board**: Drag-and-drop task management organized by phases (Planning,
+  Development, Testing, Done)
+- **Gantt Timeline**: Project timeline visualization with task dependencies and
+  milestones
 
 ### 🤖 AI-Powered Analysis
-- **Architecture Diagrams**: Auto-generate system architecture visualizations from specifications
+
+- **Architecture Diagrams**: Auto-generate system architecture visualizations
+  from specifications
 - **Feature Summaries**: AI-generated summaries of feature specifications
-- **Consistency Checks**: Automated validation across spec.md, plan.md, and tasks.md
-- **Gap Analysis**: Identify missing requirements, unlinked tasks, and incomplete documentation
+- **Consistency Checks**: Automated validation across spec.md, plan.md, and
+  tasks.md
+- **Gap Analysis**: Identify missing requirements, unlinked tasks, and
+  incomplete documentation
 
 ### 🗄️ Data Model Visualization
+
 - **Interactive Schema View**: ReactFlow-powered entity-relationship diagrams
 - **Automatic Layout**: Dagre algorithm for clean, organized graph layouts
 - **Entity Details**: View attributes, relationships, and validation rules
 - **Real-time Updates**: Auto-sync when data-model.md files change
 
 ### 🔌 Multiple AI Provider Support
+
 - **OpenAI Integration**: GPT-4, GPT-3.5-turbo, and latest models
 - **Ollama Support**: Local AI models for privacy-conscious development
 - **OpenRouter**: Access to 100+ AI models through a single API
-- **Searchable Model Selection**: Preline-powered dropdown with real-time filtering
-- **Dynamic Model Loading**: Fetch available models directly from your AI provider
+- **Searchable Model Selection**: Preline-powered dropdown with real-time
+  filtering
+- **Dynamic Model Loading**: Fetch available models directly from your AI
+  provider
 
 ### 💾 Data Management
+
 - **SQLite Database**: Fast, persistent storage with WAL mode
-- **Soft Delete Projects**: Remove from view while preserving all analysis and history
-- **Auto-restore Data**: Re-adding a project instantly restores all previous work
+- **Soft Delete Projects**: Remove from view while preserving all analysis and
+  history
+- **Auto-restore Data**: Re-adding a project instantly restores all previous
+  work
 - **File Watching**: Automatic synchronization when markdown files change
+
+## 📸 Screenshots
+
+### Stats Overview
+
+![Stats Overview](public/screenshot/stats.png) _Real-time project dashboard with
+feature progress, task completion metrics, and project health indicators_
+
+### Feature Summary
+
+![Feature Summary](public/screenshot/summary.png) _AI-generated feature
+summaries with comprehensive specification details_
+
+### Markdown View
+
+![Markdown View](public/screenshot/markdown.png) _Rich markdown rendering of
+specifications with syntax highlighting_
+
+### Kanban Board
+
+![Kanban Board](public/screenshot/kanban.png) _Drag-and-drop task management
+organized by phases with collapsible sections_
+
+### Gantt Timeline
+
+![Gantt Timeline](public/screenshot/timeline.png) _Project timeline
+visualization with task dependencies and milestones_
+
+### Architecture View
+
+![Architecture View](public/screenshot/architecture.png) _AI-generated system
+architecture diagrams with interactive components_
+
+### Schema View
+
+![Schema View](public/screenshot/schema.png) _Interactive entity-relationship
+diagrams with automatic layout_
+
+### AI Analysis
+
+![AI Analysis](public/screenshot/analysis.png) _AI-powered consistency checks,
+gap analysis, and quality insights_
+
+### Settings
+
+![Settings](public/screenshot/setting.png) _Multi-provider AI configuration with
+OpenAI, Ollama, and OpenRouter support__
 
 ## 🚀 Getting Started
 
@@ -50,7 +117,25 @@ Speckit Dashboard is an Electron-based desktop application that transforms your 
 - **npm** or **yarn**
 - **Git**
 
-### Installation
+### Installation from Release
+
+Download the latest pre-built version for your platform from the
+[GitHub Releases](https://github.com/vhm205/speckit-dash/releases) page:
+
+- **macOS**: Download the `.dmg` file
+- **Windows**: Download the `.exe` installer
+- **Linux**: Download the `.AppImage` or `.deb` package
+
+> **⚠️ Note for macOS Users**: The app is not signed with an Apple Developer
+> certificate yet. If macOS blocks the app, run:
+>
+> ```bash
+> xattr -cr /Applications/Speckit\ Dashboard.app
+> ```
+>
+> Replace the app name with the actual name if different.
+
+### Installation from Source
 
 1. **Clone the repository**
    ```bash
@@ -79,6 +164,7 @@ npm run electron:dev:wsl
 ```
 
 The application will:
+
 1. Build the Electron main process
 2. Start the Vite dev server (http://localhost:5173)
 3. Launch the Electron window with hot-reload enabled
@@ -141,21 +227,25 @@ speckit-dash/
 
 ### AI Provider Setup
 
-Speckit Dashboard supports multiple AI providers. Configure them in **Settings → AI Providers**.
+Speckit Dashboard supports multiple AI providers. Configure them in **Settings →
+AI Providers**.
 
 #### OpenAI
+
 1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Save the API key in settings
 3. Click "Fetch Models" to load available models
 4. Select your preferred model (e.g., gpt-4o, gpt-4-turbo)
 
 #### Ollama (Local AI)
+
 1. Install [Ollama](https://ollama.ai/)
 2. Pull models: `ollama pull llama2`
 3. Start Ollama: `ollama serve`
 4. Configure base URL (default: http://localhost:11434)
 
 #### OpenRouter
+
 1. Get your API key from [OpenRouter](https://openrouter.ai/keys)
 2. Save the API key in settings
 3. Click "Fetch Models" to load 100+ available models
@@ -192,6 +282,7 @@ npm run db:init            # Initialize database schema
 ### Tech Stack
 
 **Frontend:**
+
 - React 18.2 + TypeScript 5.3
 - React Router 6.20 (routing)
 - Tailwind CSS 3.4 (styling)
@@ -201,6 +292,7 @@ npm run db:init            # Initialize database schema
 - React Markdown (markdown rendering)
 
 **Backend:**
+
 - Electron 28.0
 - Better-SQLite3 9.2 (database)
 - Chokidar 3.5 (file watching)
@@ -208,11 +300,13 @@ npm run db:init            # Initialize database schema
 - Unified/Remark (markdown parsing)
 
 **AI Integration:**
+
 - @ai-sdk/openai 3.0+
 - Native Ollama support
 - OpenRouter API
 
 **Build Tools:**
+
 - Vite 5.0 (bundler)
 - Electron Builder 24.9 (packaging)
 - TypeScript 5.3
@@ -223,15 +317,18 @@ npm run db:init            # Initialize database schema
 ### WSL2 Issues
 
 If running on WSL2, use the dedicated script:
+
 ```bash
 npm run electron:dev:wsl
 ```
 
-This handles GPU acceleration and display issues. See `CHANGES/WSL2_ELECTRON_GUIDE.md` for details.
+This handles GPU acceleration and display issues. See
+`CHANGES/WSL2_ELECTRON_GUIDE.md` for details.
 
 ### Database Issues
 
 If the database becomes corrupted:
+
 ```bash
 # Backup your data
 cp ~/.config/speckit-dash/data.db ~/.config/speckit-dash/data.db.backup
@@ -243,6 +340,7 @@ npm run db:init
 ### Better-SQLite3 Build Errors
 
 After installing dependencies or upgrading Node.js:
+
 ```bash
 npm run postinstall
 ```
@@ -252,7 +350,8 @@ npm run postinstall
 ### Adding a Project
 
 1. Click **"Add New Project"** in the project dropdown
-2. Select your Spec-kit project root directory (containing `.specify/` and `specs/`)
+2. Select your Spec-kit project root directory (containing `.specify/` and
+   `specs/`)
 3. Dashboard will automatically scan and parse all features
 
 ### Viewing Features
@@ -276,7 +375,8 @@ npm run postinstall
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
+for details.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -286,7 +386,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
+for details.
 
 ## 🙏 Acknowledgments
 
@@ -298,9 +399,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/speckit-dash/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/speckit-dash/discussions)
-- **Documentation**: See the `/specs` directory for detailed feature specifications
+- **Issues**:
+  [GitHub Issues](https://github.com/yourusername/speckit-dash/issues)
+- **Discussions**:
+  [GitHub Discussions](https://github.com/yourusername/speckit-dash/discussions)
+- **Documentation**: See the `/specs` directory for detailed feature
+  specifications
+
+## ⭐ Star History
+
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="
+      https://api.star-history.com/svg?repos=vhm205/speckit-dash&type=Date&theme=dark
+    "
+  />
+  <source
+    media="(prefers-color-scheme: light)"
+    srcset="
+      https://api.star-history.com/svg?repos=vhm205/speckit-dash&type=Date
+    "
+  />
+  <img
+    alt="Star History Chart"
+    src="https://api.star-history.com/svg?repos=vhm205/speckit-dash&type=Date"
+  />
+</picture>
 
 ---
 
