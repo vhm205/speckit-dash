@@ -8,7 +8,7 @@ publish:
   provider: github
   owner: vhm205
   repo: speckit-dash
-  private: true
+  private: false
 
 directories:
   output: release

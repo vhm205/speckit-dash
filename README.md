@@ -384,6 +384,14 @@ for details.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## ☕ Support the Project
+
+If you find Speckit Dashboard helpful, consider supporting its development!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/vhm205)
+
+Your support helps maintain and improve this project. Thank you! 🙏
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
